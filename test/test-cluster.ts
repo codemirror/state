@@ -1,4 +1,4 @@
-import {findClusterBreak, countColumn, findColumn} from "@codemirror/next/text"
+import {findClusterBreak, countColumn, findColumn} from "@codemirror/text"
 import ist from "ist"
 
 describe("findClusterBreak", () => {
