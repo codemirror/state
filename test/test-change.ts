@@ -1,14 +1,14 @@
 import {ChangeDesc, ChangeSet, Text, MapMode} from "@codemirror/state"
 import ist from "ist"
 
-function mk(spec: string) {
+function mk(spec: string): ChangeDesc {
   let sections: number[] = []
   while (spec.length) {
     let next = /^(\d+)(?::(\d+))?\s*/.exec(spec)!
     spec = spec.slice(next[0].length)
     sections.push(+next[1], next[2] == null ? -1 : +next[2])
   }
-  return new ChangeDesc(sections)
+  return new (ChangeDesc as any)(sections)
 }
 
 // ('r' for random)
