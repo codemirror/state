@@ -1,5 +1,5 @@
 import ist from "ist"
-import {EditorState, StateField, Facet, tagExtension, EditorSelection, Annotation} from "@codemirror/next/state"
+import {EditorState, StateField, Facet, tagExtension, EditorSelection, Annotation} from "@codemirror/state"
 
 describe("EditorState", () => {
   it("holds doc and selection properties", () => {

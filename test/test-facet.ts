@@ -1,5 +1,5 @@
 import ist from "ist"
-import {EditorState, Facet, Extension, Prec, StateField} from "@codemirror/next/state"
+import {EditorState, Facet, Extension, Prec, StateField} from "@codemirror/state"
 
 function mk(...extensions: Extension[]) {
   return EditorState.create({extensions})

@@ -1,4 +1,4 @@
-import {Text} from "@codemirror/next/text"
+import {Text} from "@codemirror/text"
 import {ChangeSet, ChangeSpec, DefaultSplit} from "./change"
 import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"

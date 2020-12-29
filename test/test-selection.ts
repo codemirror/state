@@ -1,5 +1,5 @@
 import ist from "ist"
-import {EditorSelection} from "@codemirror/next/state"
+import {EditorSelection} from "@codemirror/state"
 
 describe("EditorSelection", () => {
   it("stores ranges with a primary range", () => {

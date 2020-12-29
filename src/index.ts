@@ -4,7 +4,7 @@ export {Facet, StateField, Extension, Prec, tagExtension} from "./facet"
 export {EditorSelection, SelectionRange} from "./selection"
 export {Transaction, TransactionSpec, ReconfigurationSpec,
         Annotation, AnnotationType, StateEffect, StateEffectType} from "./transaction"
-export {Text} from "@codemirror/next/text"
+export {Text} from "@codemirror/text"
 export {combineConfig} from "./config"
 export {ChangeSpec, ChangeSet, ChangeDesc, MapMode} from "./change"
 export {CharCategory} from "./charcategory"

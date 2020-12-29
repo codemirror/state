@@ -3,7 +3,7 @@ import {EditorState} from "./state"
 import {EditorSelection, checkSelection} from "./selection"
 import {changeFilter, transactionFilter, transactionExtender, lineSeparator} from "./extension"
 import {Extension} from "./facet"
-import {Text} from "@codemirror/next/text"
+import {Text} from "@codemirror/text"
 
 /// Annotations are tagged values that are used to add metadata to
 /// transactions in an extensible way. They should be used to model
