@@ -198,7 +198,7 @@ export class RangeSet<T extends RangeValue> {
     return last < 0 ? 0 : Math.max(this.chunkEnd(last), this.nextLayer.length)
   }
 
-  /// @internal
+  /// The number of ranges in the set.
   get size(): number {
     if (this == RangeSet.empty) return 0
     let size = this.nextLayer.size
