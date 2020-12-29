@@ -1,4 +1,4 @@
-import {ChangeDesc, MapMode} from "@codemirror/next/state"
+import {ChangeDesc, MapMode} from "@codemirror/state"
 
 /// Each range is associated with a value, which must inherit from
 /// this class.
