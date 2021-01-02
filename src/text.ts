@@ -57,9 +57,9 @@ export abstract class Text implements Iterable<string> {
   /// Replace a range of the text with the given content.
   replace(from: number, to: number, text: Text): Text {
     let parts: Text[] = []
-    if (from) this.decompose(0, from, parts, Open.To)
-    if (text.length) text.decompose(0, text.length, parts, (from ? Open.From : 0) | (to < this.length ? Open.To : 0))
-    if (to < this.length) this.decompose(to, this.length, parts, parts.length ? Open.From : 0)
+    this.decompose(0, from, parts, Open.To)
+    if (text.length) text.decompose(0, text.length, parts, Open.From | Open.To)
+    this.decompose(to, this.length, parts, Open.From)
     return TextNode.from(parts, this.length - (to - from) + text.length)
   }
 

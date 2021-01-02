@@ -51,6 +51,10 @@ describe("Text", () => {
     ist(Text.of(["?" + line].concat(lines.slice(1))).replace(9500, text0.length + 1, Text.empty).toString(), "?" + text0.slice(0, 9499))
   })
 
+  it("can handle deleting the entire document", () => {
+    ist(doc0.replace(0, doc0.length, Text.empty).toString(), "")
+  })
+
   it("can insert on node boundaries", () => {
     let doc = doc0, pos = doc.children![0].length
     ist(doc.replace(pos, pos, Text.of(["abc"])).slice(pos, pos + 3).toString(), "abc")
