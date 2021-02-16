@@ -198,7 +198,7 @@ type StateFieldSpec<Value> = {
   compare?: (a: Value, b: Value) => boolean,
 
   /// Provide values for facets based on the value of this field. The
-  /// given function will be called once with the initializedfield. It
+  /// given function will be called once with the initialized field. It
   /// will usually want to call some facet's
   /// [`from`](#state.Facet.from) method to create facet inputs from
   /// this field, but can also return other extensions that should be
