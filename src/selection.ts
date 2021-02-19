@@ -67,8 +67,8 @@ export class SelectionRange {
 
   /// Map this range through a change, producing a valid range in the
   /// updated document.
-  map(change: ChangeDesc): SelectionRange {
-    let from = change.mapPos(this.from), to = change.mapPos(this.to)
+  map(change: ChangeDesc, assoc = -1): SelectionRange {
+    let from = change.mapPos(this.from, assoc), to = change.mapPos(this.to, assoc)
     return from == this.from && to == this.to ? this : new SelectionRange(from, to, this.flags)
   }
 
@@ -110,9 +110,9 @@ export class EditorSelection {
 
   /// Map a selection through a change. Used to adjust the selection
   /// position for changes.
-  map(change: ChangeDesc): EditorSelection {
+  map(change: ChangeDesc, assoc = -1): EditorSelection {
     if (change.empty) return this
-    return EditorSelection.create(this.ranges.map(r => r.map(change)), this.mainIndex)
+    return EditorSelection.create(this.ranges.map(r => r.map(change, assoc)), this.mainIndex)
   }
 
   /// Compare this selection to another selection.
