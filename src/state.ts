@@ -4,7 +4,7 @@ import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
 import {allowMultipleSelections, changeFilter, transactionFilter, transactionExtender,
         lineSeparator, languageData} from "./extension"
-import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr} from "./facet"
+import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment} from "./facet"
 import {CharCategory, makeCategorizer} from "./charcategory"
 
 /// Options passed when [creating](#state.EditorState^create) an
@@ -50,7 +50,7 @@ export class EditorState {
     tr: Transaction | null = null
   ) {
     this.status = config.statusTemplate.slice()
-    if (tr && !tr.reconfigure) {
+    if (tr && tr.startState.config == config) {
       this.values = tr.startState.values.slice()
     } else {
       this.values = config.dynamicSlots.map(_ => null)
@@ -95,9 +95,7 @@ export class EditorState {
   /// [effects](#state.TransactionSpec.effects) are assumed to refer
   /// to the document created by its _own_ changes. The resulting
   /// transaction contains the combined effect of all the different
-  /// specs. For things like
-  /// [selection](#state.TransactionSpec.selection) or
-  /// [reconfiguration](#state.TransactionSpec.reconfigure), later
+  /// specs. For [selection](#state.TransactionSpec.selection), later
   /// specs take precedence over earlier ones.
   update(...specs: readonly TransactionSpec[]): Transaction {
     return resolveTransaction(this, specs, true)
@@ -105,12 +103,25 @@ export class EditorState {
 
   /// @internal
   applyTransaction(tr: Transaction) {
-    let conf = this.config
-    if (tr.reconfigure)
-      conf = Configuration.resolve(tr.reconfigure.full || conf.source,
-                                   Object.assign(conf.replacements, tr.reconfigure, {full: undefined}),
-                                   this)
-    new EditorState(conf, tr.newDoc, tr.newSelection, tr)
+    let conf: Configuration | null = this.config, {base, compartments} = conf
+    for (let effect of tr.effects) {
+      if (effect.is(Compartment.reconfigure)) {
+        if (conf) {
+          compartments = new Map
+          conf.compartments.forEach((val, key) => compartments!.set(key, val))
+          conf = null
+        }
+        compartments.set(effect.value.compartment, effect.value.extension)
+        this
+      } else if (effect.is(StateEffect.reconfigure)) {
+        conf = null
+        base = effect.value
+      } else if (effect.is(StateEffect.appendConfig)) {
+        conf = null
+        base = asArray(base).concat(effect.value)
+      }
+    }
+    new EditorState(conf || Configuration.resolve(base, compartments, this), tr.newDoc, tr.newSelection, tr)
   }
 
   /// Create a [transaction spec](#state.TransactionSpec) that
@@ -225,7 +236,7 @@ export class EditorState {
   /// initializing an editor—updated states are created by applying
   /// transactions.
   static create(config: EditorStateConfig = {}): EditorState {
-    let configuration = Configuration.resolve(config.extensions || [])
+    let configuration = Configuration.resolve(config.extensions || [], new Map)
     let doc = config.doc instanceof Text ? config.doc
       : Text.of((config.doc || "").split(configuration.staticFacet(EditorState.lineSeparator) || DefaultSplit))
     let selection = !config.selection ? EditorSelection.single(0)
@@ -348,14 +359,15 @@ export class EditorState {
   /// This is a more limited form of
   /// [`transactionFilter`](#state.EditorState^transactionFilter),
   /// which can only add
-  /// [annotations](#state.TransactionSpec.annotations),
-  /// [effects](#state.TransactionSpec.effects), and
-  /// [configuration](#state.TransactionSpec.reconfigure) info. _But_,
-  /// this type of filter runs even the transaction has disabled
-  /// regular [filtering](#state.TransactionSpec.filter), making it
-  /// suitable for effects that don't need to touch the changes or
-  /// selection, but do want to process every transaction.
+  /// [annotations](#state.TransactionSpec.annotations) and
+  /// [effects](#state.TransactionSpec.effects). _But_, this type
+  /// of filter runs even the transaction has disabled regular
+  /// [filtering](#state.TransactionSpec.filter), making it suitable
+  /// for effects that don't need to touch the changes or selection,
+  /// but do want to process every transaction.
   ///
   /// Extenders run _after_ filters, when both are applied.
   static transactionExtender = transactionExtender
 }
+
+Compartment.reconfigure = StateEffect.define<{compartment: Compartment, extension: Extension}>()

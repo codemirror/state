@@ -1,4 +1,4 @@
-import {Transaction} from "./transaction"
+import {Transaction, StateEffect, StateEffectType} from "./transaction"
 import {EditorState} from "./state"
 
 let nextID = 0
@@ -131,7 +131,7 @@ class FacetProvider<Input> {
     }
 
     return (state: EditorState, tr: Transaction | null) => {
-      if (!tr || tr.reconfigure) {
+      if (!tr || tr.reconfigured) {
         state.values[idx] = getter(state)
         return SlotStatus.Changed
       } else {
@@ -164,7 +164,7 @@ function dynamicFacetSlot<Input, Output>(
   let idx = addresses[facet.id] >> 1
 
   return (state: EditorState, tr: Transaction | null) => {
-    let oldAddr = !tr ? null : tr.reconfigure ? tr.startState.config.address[facet.id] : idx << 1
+    let oldAddr = !tr ? null : tr.reconfigured ? tr.startState.config.address[facet.id] : idx << 1
     let changed = oldAddr == null
     for (let dynAddr of dynamic) {
       if (ensureAddr(state, dynAddr) & SlotStatus.Changed) changed = true
@@ -259,7 +259,7 @@ export class StateField<Value> {
         return SlotStatus.Changed
       }
       let oldVal, changed = 0
-      if (tr.reconfigure) {
+      if (tr.reconfigured) {
         let oldIdx = maybeIndex(tr.startState, this.id)
         oldVal = oldIdx == null ? this.create(tr.startState) : tr.startState.values[oldIdx]
         changed = SlotStatus.Changed
@@ -328,29 +328,40 @@ class PrecExtension {
   extension!: Extension
 }
 
-class TaggedExtension {
-  constructor(readonly tag: string | symbol, readonly inner: Extension) {}
+
+/// Extension compartments can be used to make a configuration
+/// dynamic. By [wrapping](#state.Compartment.of) part of your
+/// configuration in a compartment, you can later
+/// [replace](#state.Compartment.reconfigure) that part through a
+/// transaction.
+export class Compartment {
+  /// Create an instance of this compartment to add to your [state
+  /// configuration](#state.EditorStateConfig.extensions).
+  of(ext: Extension): Extension { return new CompartmentInstance(this, ext) }
+
+  /// Create an [effect](#state.TransactionSpec.effects) that
+  /// reconfigures this compartment.
+  reconfigure(content: Extension): StateEffect<unknown> {
+    return Compartment.reconfigure.of({compartment: this, extension: content})
+  }
+
+  /// This is initialized in state.ts to avoid a cyclic dependency
+  /// @internal
+  static reconfigure: StateEffectType<{compartment: Compartment, extension: Extension}>
+}
+
+export class CompartmentInstance {
+  constructor(readonly compartment: Compartment, readonly inner: Extension) {}
   extension!: Extension
 }
-
-/// Tagged extensions can be used to make a configuration dynamic.
-/// Tagging an extension allows you to later
-/// [replace](#state.TransactionSpec.reconfigure) it with
-/// another extension. A given tag may only occur once within a given
-/// configuration.
-export function tagExtension(tag: string | symbol, extension: Extension): Extension {
-  return new TaggedExtension(tag, extension)
-}
-
-export type ExtensionMap = {[tag: string]: Extension | undefined}
 
 type DynamicSlot = (state: EditorState, tr: Transaction | null) => number
 
 export class Configuration {
   readonly statusTemplate: SlotStatus[] = []
 
-  constructor(readonly source: Extension,
-              readonly replacements: ExtensionMap,
+  constructor(readonly base: Extension,
+              readonly compartments: Map<Compartment, Extension>,
               readonly dynamicSlots: DynamicSlot[],
               readonly address: {[id: number]: number},
               readonly staticValues: readonly any[]) {
@@ -363,10 +374,10 @@ export class Configuration {
     return addr == null ? facet.default : this.staticValues[addr >> 1]
   }
 
-  static resolve(extension: Extension, replacements: ExtensionMap = Object.create(null), oldState?: EditorState) {
+  static resolve(base: Extension, compartments: Map<Compartment, Extension>, oldState?: EditorState) {
     let fields: StateField<any>[] = []
     let facets: {[id: number]: FacetProvider<any>[]} = Object.create(null)
-    for (let ext of flatten(extension, replacements)) {
+    for (let ext of flatten(base, compartments)) {
       if (ext instanceof StateField) fields.push(ext)
       else (facets[ext.facet.id] || (facets[ext.facet.id] = [])).push(ext)
     }
@@ -404,33 +415,30 @@ export class Configuration {
       }
     }
 
-    return new Configuration(extension, replacements, dynamicSlots.map(f => f(address)), address, staticValues)
+    return new Configuration(base, compartments, dynamicSlots.map(f => f(address)), address, staticValues)
   }
 }
 
-function allKeys(obj: ExtensionMap) {
-  return ((Object.getOwnPropertySymbols ? Object.getOwnPropertySymbols(obj) : []) as (string | symbol)[]).concat(Object.keys(obj))
-}
-
-function flatten(extension: Extension, replacements: ExtensionMap) {
+function flatten(extension: Extension, compartments: Map<Compartment, Extension>) {
   let result: (FacetProvider<any> | StateField<any>)[][] = [[], [], [], []]
   let seen = new Map<Extension, number>()
-  let tagsSeen = Object.create(null)
+  let compartmentsSeen = new Set<Compartment>()
   function inner(ext: Extension, prec: number) {
     let known = seen.get(ext)
     if (known != null) {
       if (known >= prec) return
       let found = result[known].indexOf(ext as any)
       if (found > -1) result[known].splice(found, 1)
+      if (ext instanceof CompartmentInstance) compartmentsSeen.delete(ext.compartment)
     }
     seen.set(ext, prec)
     if (Array.isArray(ext)) {
       for (let e of ext) inner(e, prec)
-    } else if (ext instanceof TaggedExtension) {
-      if (ext.tag in tagsSeen)
-        throw new RangeError(`Duplicate use of tag '${String(ext.tag)}' in extensions`)
-      tagsSeen[ext.tag] = true
-      inner(replacements[ext.tag as any] || ext.inner, prec)
+    } else if (ext instanceof CompartmentInstance) {
+      if (compartmentsSeen.has(ext.compartment))
+        throw new RangeError(`Duplicate use of compartment in extensions`)
+      compartmentsSeen.add(ext.compartment)
+      inner(compartments.get(ext.compartment) || ext.inner, prec)
     } else if (ext instanceof PrecExtension) {
       inner(ext.inner, ext.prec)
     } else if (ext instanceof StateField) {
@@ -440,14 +448,12 @@ function flatten(extension: Extension, replacements: ExtensionMap) {
       result[prec].push(ext)
       if (ext.facet.extensions) inner(ext.facet.extensions, prec)
     } else {
-      inner((ext as any).extension, prec)
+      let content = (ext as any).extension
+      if (!content) throw new Error(`Unrecognized extension value in extension set (${ext}). This sometimes happens because multiple instances of @codemirror/state are loaded, breaking instanceof checks.`)
+      inner(content, prec)
     }
   }
   inner(extension, Prec_.default)
-  for (let key of allKeys(replacements)) if (!(key in tagsSeen) && key != "full" && replacements[key as any]) {
-    tagsSeen[key] = true
-    inner(replacements[key as any]!, Prec_.default)
-  }
   return result.reduce((a, b) => a.concat(b))
 }
 

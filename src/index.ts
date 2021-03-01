@@ -1,9 +1,8 @@
 export {EditorStateConfig, EditorState} from "./state"
 export {StateCommand} from "./extension"
-export {Facet, StateField, Extension, Prec, tagExtension} from "./facet"
+export {Facet, StateField, Extension, Prec, Compartment} from "./facet"
 export {EditorSelection, SelectionRange} from "./selection"
-export {Transaction, TransactionSpec, ReconfigurationSpec,
-        Annotation, AnnotationType, StateEffect, StateEffectType} from "./transaction"
+export {Transaction, TransactionSpec, Annotation, AnnotationType, StateEffect, StateEffectType} from "./transaction"
 export {Text} from "@codemirror/text"
 export {combineConfig} from "./config"
 export {ChangeSpec, ChangeSet, ChangeDesc, MapMode} from "./change"

@@ -1,5 +1,5 @@
 import ist from "ist"
-import {EditorState, StateField, Facet, tagExtension, EditorSelection, Annotation} from "@codemirror/state"
+import {EditorState, StateField, Facet, Compartment, StateEffect, EditorSelection, Annotation} from "@codemirror/state"
 
 describe("EditorState", () => {
   it("holds doc and selection properties", () => {
@@ -41,7 +41,7 @@ describe("EditorState", () => {
     let deflt = EditorState.create({}), two = EditorState.create({extensions: [EditorState.tabSize.of(2)]})
     ist(deflt.tabSize, 4)
     ist(two.tabSize, 2)
-    let updated = deflt.update({reconfigure: {full: EditorState.tabSize.of(8)}}).state
+    let updated = deflt.update({effects: StateEffect.reconfigure.of(EditorState.tabSize.of(8))}).state
     ist(updated.tabSize, 8)
   })
 
@@ -51,7 +51,7 @@ describe("EditorState", () => {
     ist(deflt.toText("a\nb").lines, 2)
     ist(crlf.facet(EditorState.lineSeparator), "\r\n")
     ist(crlf.toText("a\nb").lines, 1)
-    let updated = crlf.update({reconfigure: {full: EditorState.lineSeparator.of("\n")}}).state
+    let updated = crlf.update({effects: StateEffect.reconfigure.of(EditorState.lineSeparator.of("\n"))}).state
     ist(updated.facet(EditorState.lineSeparator), "\n")
   })
 
@@ -92,26 +92,26 @@ describe("EditorState", () => {
     let field = StateField.define({create: () => 0, update: val => val + 1})
     let start = EditorState.create({extensions: [field]}).update({}).state
     ist(start.field(field), 1)
-    ist(start.update({reconfigure: {full: field}}).state.field(field), 2)
-    ist(start.update({reconfigure: {full: []}}).state.field(field, false), undefined)
+    ist(start.update({effects: StateEffect.reconfigure.of(field)}).state.field(field), 2)
+    ist(start.update({effects: StateEffect.reconfigure.of([])}).state.field(field, false), undefined)
   })
 
   it("can replace extension groups", () => {
-    let g = Symbol("A"), f = Facet.define<number>()
-    let state = EditorState.create({extensions: [tagExtension(g, f.of(10)), f.of(20)]})
+    let comp = new Compartment, f = Facet.define<number>()
+    let state = EditorState.create({extensions: [comp.of(f.of(10)), f.of(20)]})
     ist(state.facet(f).join(), "10,20")
-    let state2 = state.update({reconfigure: {[g]: [f.of(1), f.of(2)]}}).state
+    let state2 = state.update({effects: comp.reconfigure([f.of(1), f.of(2)])}).state
     ist(state2.facet(f).join(), "1,2,20")
-    let state3 = state2.update({reconfigure: {[g]: f.of(3)}}).state
+    let state3 = state2.update({effects: comp.reconfigure(f.of(3))}).state
     ist(state3.facet(f).join(), "3,20")
   })
 
   it("raises an error on duplicate extension groups", () => {
-    let g = Symbol("A"), f = Facet.define<number>()
-    ist.throws(() => EditorState.create({extensions: [tagExtension(g, f.of(1)), tagExtension(g, f.of(2))]}),
-               /duplicate use of tag/i)
-    ist.throws(() => EditorState.create({extensions: tagExtension(g, tagExtension(g, f.of(1)))}),
-               /duplicate use of tag/i)
+    let comp = new Compartment, f = Facet.define<number>()
+    ist.throws(() => EditorState.create({extensions: [comp.of(f.of(1)), comp.of(f.of(2))]}),
+               /duplicate use of compartment/i)
+    ist.throws(() => EditorState.create({extensions: comp.of(comp.of(f.of(1)))}),
+               /duplicate use of compartment/i)
   })
 
   it("allows facets computed from fields", () => {

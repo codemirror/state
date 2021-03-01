@@ -43,6 +43,24 @@ interface StateEffectSpec<Value> {
   map?: (value: Value, mapping: ChangeDesc) => Value | undefined
 }
 
+/// Representation of a type of state effect. Defined with
+/// [`StateEffect.define`](#state.StateEffect^define).
+export class StateEffectType<Value> {
+  /// @internal
+  constructor(
+    // The `any` types in these function types are there to work
+    // around TypeScript issue #37631, where the type guard on
+    // `StateEffect.is` mysteriously stops working when these properly
+    // have type `Value`.
+    /// @internal
+    readonly map: (value: any, mapping: ChangeDesc) => any | undefined
+  ) {}
+
+  /// Create a [state effect](#state.StateEffect) instance of this
+  /// type.
+  of(value: Value): StateEffect<Value> { return new StateEffect(this, value) }
+}
+
 /// State effects can be used to represent additional effects
 /// associated with a [transaction](#state.Transaction.effects). They
 /// are often useful to model changes to custom [state
@@ -83,24 +101,16 @@ export class StateEffect<Value> {
     }
     return result
   }
-}
 
-/// Representation of a type of state effect. Defined with
-/// [`StateEffect.define`](#state.StateEffect^define).
-export class StateEffectType<Value> {
-  /// @internal
-  constructor(
-    // The `any` types in these function types are there to work
-    // around TypeScript issue #37631, where the type guard on
-    // `StateEffect.is` mysteriously stops working when these properly
-    // have type `Value`.
-    /// @internal
-    readonly map: (value: any, mapping: ChangeDesc) => any | undefined
-  ) {}
+  /// This effect can be used to reconfigure the root extensions of
+  /// the editor. Doing this will discard any extensions
+  /// [appended](#state.StateEffect^appendConfig), but does not reset
+  /// the content of [reconfigured](#state.Compartment.reconfigure)
+  /// compartments.
+  static reconfigure = StateEffect.define<Extension>()
 
-  /// Create a [state effect](#state.StateEffect) instance of this
-  /// type.
-  of(value: Value): StateEffect<Value> { return new StateEffect(this, value) }
+  /// Append extensions to the top-level configuration of the editor.
+  static appendConfig = StateEffect.define<Extension>()
 }
 
 /// Describes a [transaction](#state.Transaction) when calling the
@@ -122,8 +132,6 @@ export interface TransactionSpec {
   /// When set to `true`, the transaction is marked as needing to
   /// scroll the current selection into view.
   scrollIntoView?: boolean,
-  /// Specifies that the state should be reconfigured.
-  reconfigure?: ReconfigurationSpec
   /// By default, transactions can be modified by [change
   /// filters](#state.EditorState^changeFilter) and [transaction
   /// filters](#state.EditorState^transactionFilter). You can set this
@@ -136,28 +144,6 @@ export interface TransactionSpec {
   /// set to true, its positions will be taken to refer to the
   /// document created by the specs before it instead.
   sequential?: boolean
-}
-
-/// Type used in [transaction specs](#state.TransactionSpec) to
-/// indicate how the state should be reconfigured.
-export interface ReconfigurationSpec {
-  /// If given, this will replace the state's entire
-  /// [configuration](#state.EditorStateConfig.extensions) with a
-  /// new configuration derived from the given extension. Previously
-  /// replaced extensions are reset.
-  full?: Extension,
-  /// When given, this extension is appended to the current
-  /// configuration.
-  append?: Extension,
-  /// Any other properties _replace_ extensions with the
-  /// [tag](#state.tagExtension) corresponding to their property
-  /// name. (Note that, though TypeScript can't express this yet,
-  /// properties may also be symbols.)
-  ///
-  /// This causes the current configuration to be updated by
-  /// dropping the extensions previous associated with the tag (if
-  /// any) and replacing them with the given extension.
-  [tag: string]: Extension | undefined
 }
 
 /// Changes to the editor state are grouped into transactions.
@@ -184,9 +170,6 @@ export class Transaction {
     readonly effects: readonly StateEffect<any>[],
     /// @internal
     readonly annotations: readonly Annotation<any>[],
-    /// Holds an object when this transaction
-    /// [reconfigures](#state.ReconfigurationSpec) the state.
-    readonly reconfigure: ReconfigurationSpec | undefined,
     /// Whether the selection should be scrolled into view after this
     /// transaction is dispatched.
     readonly scrollIntoView: boolean
@@ -232,6 +215,12 @@ export class Transaction {
   /// Indicates whether the transaction changed the document.
   get docChanged(): boolean { return !this.changes.empty }
 
+  /// Indicates whether this transaction reconfigures the state
+  /// (through a [configuration compartment](#state.Compartment) or
+  /// with a top-level configuration
+  /// [effect](#state.StateEffect^reconfigure).
+  get reconfigured(): boolean { return this.startState.config != this.state.config }
+
   /// Annotation used to store transaction timestamps.
   static time = Annotation.define<number>()
 
@@ -269,8 +258,7 @@ type ResolvedSpec = {
   selection: EditorSelection | undefined,
   effects: readonly StateEffect<any>[],
   annotations: readonly Annotation<any>[],
-  scrollIntoView: boolean,
-  reconfigure: ReconfigurationSpec | undefined
+  scrollIntoView: boolean
 }
 
 function mergeTransaction(a: ResolvedSpec, b: ResolvedSpec, sequential: boolean): ResolvedSpec {
@@ -289,20 +277,11 @@ function mergeTransaction(a: ResolvedSpec, b: ResolvedSpec, sequential: boolean)
     selection: b.selection ? b.selection.map(mapForB) : a.selection?.map(mapForA),
     effects: StateEffect.mapEffects(a.effects, mapForA).concat(StateEffect.mapEffects(b.effects, mapForB)),
     annotations: a.annotations.length ? a.annotations.concat(b.annotations) : b.annotations,
-    scrollIntoView: a.scrollIntoView || b.scrollIntoView,
-    reconfigure: !b.reconfigure ? a.reconfigure : b.reconfigure.full || !a.reconfigure ? b.reconfigure
-      : Object.assign({}, a.reconfigure, b.reconfigure)
+    scrollIntoView: a.scrollIntoView || b.scrollIntoView
   }
 }
 
 function resolveTransactionInner(state: EditorState, spec: TransactionSpec, docSize: number): ResolvedSpec {
-  let reconf = spec.reconfigure
-  if (reconf && reconf.append) {
-    reconf = Object.assign({}, reconf)
-    let tag = typeof Symbol == "undefined" ? "__append" + Math.floor(Math.random() * 0xffffffff) : Symbol("appendConf")
-    reconf[tag as string] = reconf.append
-    reconf.append = undefined
-  }
   let sel = spec.selection
   return {
     changes: spec.changes instanceof ChangeSet ? spec.changes
@@ -310,8 +289,7 @@ function resolveTransactionInner(state: EditorState, spec: TransactionSpec, docS
     selection: sel && (sel instanceof EditorSelection ? sel : EditorSelection.single(sel.anchor, sel.head)),
     effects: asArray(spec.effects),
     annotations: asArray(spec.annotations),
-    scrollIntoView: !!spec.scrollIntoView,
-    reconfigure: reconf
+    scrollIntoView: !!spec.scrollIntoView
   }
 }
 
@@ -323,7 +301,7 @@ export function resolveTransaction(state: EditorState, specs: readonly Transacti
     let seq = !!specs[i].sequential
     s = mergeTransaction(s, resolveTransactionInner(state, specs[i], seq ? s.changes.newLength : state.doc.length), seq)
   }
-  let tr = new Transaction(state, s.changes, s.selection, s.effects, s.annotations, s.reconfigure, s.scrollIntoView)
+  let tr = new Transaction(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView)
   return extendTransaction(filter ? filterTransaction(tr) : tr)
 }
 
@@ -350,7 +328,7 @@ function filterTransaction(tr: Transaction) {
     }
     tr = new Transaction(state, changes, tr.selection && tr.selection.map(back),
                          StateEffect.mapEffects(tr.effects, back),
-                         tr.annotations, tr.reconfigure, tr.scrollIntoView)
+                         tr.annotations, tr.scrollIntoView)
   }
 
   // Transaction filters
@@ -371,8 +349,7 @@ function extendTransaction(tr: Transaction) {
     if (extension && Object.keys(extension).length)
       spec = mergeTransaction(tr, resolveTransactionInner(state, extension, tr.changes.newLength), true)
   }
-  return spec == tr ? tr : new Transaction(state, tr.changes, tr.selection, spec.effects, spec.annotations,
-                                           spec.reconfigure, spec.scrollIntoView)
+  return spec == tr ? tr : new Transaction(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView)
 }
 
 const none: readonly any[] = []

@@ -70,7 +70,7 @@ extensions for the editor state.
 
 @Prec
 
-@tagExtension
+@Compartment
 
 ### Utilities
 

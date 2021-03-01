@@ -1,5 +1,5 @@
 import ist from "ist"
-import {EditorState, Facet, Extension, Prec, StateField} from "@codemirror/state"
+import {EditorState, Facet, Extension, Prec, StateField, StateEffect} from "@codemirror/state"
 
 function mk(...extensions: Extension[]) {
   return EditorState.create({extensions})
@@ -108,14 +108,14 @@ describe("EditorState facets", () => {
 
   it("survives reconfiguration", () => {
     let st = mk(num.compute(["doc"], s => s.doc.length), num.of(2), str.of("3"))
-    let st2 = st.update({reconfigure: {full: [num.compute(["doc"], s => s.doc.length), num.of(2)]}}).state
+    let st2 = st.update({effects: StateEffect.reconfigure.of([num.compute(["doc"], s => s.doc.length), num.of(2)])}).state
     ist(st.facet(num), st2.facet(num))
     ist(st2.facet(str).length, 0)
   })
 
   it("preserves static facets across reconfiguration", () => {
     let st = mk(num.of(1), num.of(2), str.of("3"))
-    let st2 = st.update({reconfigure: {full: [num.of(1), num.of(2)]}}).state
+    let st2 = st.update({effects: StateEffect.reconfigure.of([num.of(1), num.of(2)])}).state
     ist(st.facet(num), st2.facet(num))
   })
 
@@ -132,7 +132,7 @@ describe("EditorState facets", () => {
         return val + 1
       }
     })
-    st = st.update({reconfigure: {x: field}}).state
+    st = st.update({effects: StateEffect.appendConfig.of(field)}).state
     ist(events.join(", "), "create, update 0")
     ist(st.field(field), 1)
   })
