@@ -1,6 +1,6 @@
 {
   "name": "@codemirror/state",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "description": "Editor state data structures for the CodeMirror code editor",
   "scripts": {
     "test": "mocha test/test-*.js",
@@ -26,7 +26,7 @@
   "sideEffects": false,
   "license": "MIT",
   "dependencies": {
-    "@codemirror/text": "^0.17.0"
+    "@codemirror/text": "^0.18.0"
   },
   "devDependencies": {
     "rollup": "^2.35.1",
