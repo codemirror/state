@@ -114,6 +114,26 @@ describe("EditorState", () => {
                /duplicate use of compartment/i)
   })
 
+  it("preserves compartments on reconfigure", () => {
+    let comp = new Compartment, f = Facet.define<number>(), init = comp.of(f.of(10))
+    let state = EditorState.create({extensions: [init, f.of(20)]})
+    state = state.update({effects: comp.reconfigure(f.of(0))}).state
+    ist(state.facet(f).join(), "0,20")
+    state = state.update({effects: StateEffect.reconfigure.of([init, f.of(2)])}).state
+    ist(state.facet(f).join(), "0,2")
+  })
+
+  it("forgets dropped compartments", () => {
+    let comp = new Compartment, f = Facet.define<number>(), init = comp.of(f.of(10))
+    let state = EditorState.create({extensions: [init, f.of(20)]})
+    state = state.update({effects: comp.reconfigure(f.of(0))}).state
+    ist(state.facet(f).join(), "0,20")
+    state = state.update({effects: StateEffect.reconfigure.of(f.of(2))}).state
+    ist(state.facet(f).join(), "2")
+    state = state.update({effects: StateEffect.reconfigure.of([init, f.of(2)])}).state
+    ist(state.facet(f).join(), "10,2")
+  })
+
   it("allows facets computed from fields", () => {
     let field = StateField.define({create: () => [0], update: (v, tr) => tr.docChanged ? [tr.state.doc.length] : v})
     let facet = Facet.define<number>()

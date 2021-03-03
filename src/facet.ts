@@ -377,7 +377,9 @@ export class Configuration {
   static resolve(base: Extension, compartments: Map<Compartment, Extension>, oldState?: EditorState) {
     let fields: StateField<any>[] = []
     let facets: {[id: number]: FacetProvider<any>[]} = Object.create(null)
-    for (let ext of flatten(base, compartments)) {
+    let usedCompartments = new Set<Compartment>()
+
+    for (let ext of flatten(base, compartments, usedCompartments)) {
       if (ext instanceof StateField) fields.push(ext)
       else (facets[ext.facet.id] || (facets[ext.facet.id] = [])).push(ext)
     }
@@ -415,14 +417,23 @@ export class Configuration {
       }
     }
 
-    return new Configuration(base, compartments, dynamicSlots.map(f => f(address)), address, staticValues)
+    return new Configuration(base, removeUnused(compartments, usedCompartments),
+                             dynamicSlots.map(f => f(address)), address, staticValues)
   }
 }
 
-function flatten(extension: Extension, compartments: Map<Compartment, Extension>) {
+function removeUnused(compartments: Map<Compartment, Extension>, usedCompartments: Set<Compartment>) {
+  let dropped: Compartment[] = []
+  compartments.forEach((_, c) => { if (!usedCompartments.has(c)) dropped.push(c) })
+  if (!dropped.length) return compartments
+  let newCompartments = new Map<Compartment, Extension>()
+  compartments.forEach((e, c) => { if (dropped.indexOf(c) < 0) newCompartments.set(c, e) })
+  return newCompartments
+}
+
+function flatten(extension: Extension, compartments: Map<Compartment, Extension>, compartmentsSeen: Set<Compartment>) {
   let result: (FacetProvider<any> | StateField<any>)[][] = [[], [], [], []]
   let seen = new Map<Extension, number>()
-  let compartmentsSeen = new Set<Compartment>()
   function inner(ext: Extension, prec: number) {
     let known = seen.get(ext)
     if (known != null) {
