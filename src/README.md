@@ -35,8 +35,6 @@ console.log(transaction.state.doc.toString()) // "hello editor"
 
 @TransactionSpec
 
-@ReconfigurationSpec
-
 @Transaction
 
 @ChangeSpec
