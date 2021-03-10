@@ -97,10 +97,13 @@ describe("EditorState", () => {
   })
 
   it("can replace extension groups", () => {
-    let comp = new Compartment, f = Facet.define<number>()
-    let state = EditorState.create({extensions: [comp.of(f.of(10)), f.of(20)]})
+    let comp = new Compartment, f = Facet.define<number>(), content = f.of(10)
+    let state = EditorState.create({extensions: [comp.of(content), f.of(20)]})
+    ist(comp.get(state), content)
     ist(state.facet(f).join(), "10,20")
-    let state2 = state.update({effects: comp.reconfigure([f.of(1), f.of(2)])}).state
+    let content2 = [f.of(1), f.of(2)]
+    let state2 = state.update({effects: comp.reconfigure(content2)}).state
+    ist(comp.get(state), content2)
     ist(state2.facet(f).join(), "1,2,20")
     let state3 = state2.update({effects: comp.reconfigure(f.of(3))}).state
     ist(state3.facet(f).join(), "3,20")
@@ -132,6 +135,7 @@ describe("EditorState", () => {
     ist(state.facet(f).join(), "2")
     state = state.update({effects: StateEffect.reconfigure.of([init, f.of(2)])}).state
     ist(state.facet(f).join(), "10,2")
+    ist(comp.get(state), undefined)
   })
 
   it("allows facets computed from fields", () => {

@@ -345,6 +345,12 @@ export class Compartment {
     return Compartment.reconfigure.of({compartment: this, extension: content})
   }
 
+  /// Get the current content of the compartment in the state, or
+  /// `undefined` if it isn't present.
+  get(state: EditorState): Extension | undefined {
+    return state.config.compartments.get(this)
+  }
+
   /// This is initialized in state.ts to avoid a cyclic dependency
   /// @internal
   static reconfigure: StateEffectType<{compartment: Compartment, extension: Extension}>
@@ -377,9 +383,9 @@ export class Configuration {
   static resolve(base: Extension, compartments: Map<Compartment, Extension>, oldState?: EditorState) {
     let fields: StateField<any>[] = []
     let facets: {[id: number]: FacetProvider<any>[]} = Object.create(null)
-    let usedCompartments = new Set<Compartment>()
+    let newCompartments = new Map<Compartment, Extension>()
 
-    for (let ext of flatten(base, compartments, usedCompartments)) {
+    for (let ext of flatten(base, compartments, newCompartments)) {
       if (ext instanceof StateField) fields.push(ext)
       else (facets[ext.facet.id] || (facets[ext.facet.id] = [])).push(ext)
     }
@@ -417,21 +423,11 @@ export class Configuration {
       }
     }
 
-    return new Configuration(base, removeUnused(compartments, usedCompartments),
-                             dynamicSlots.map(f => f(address)), address, staticValues)
+    return new Configuration(base, newCompartments, dynamicSlots.map(f => f(address)), address, staticValues)
   }
 }
 
-function removeUnused(compartments: Map<Compartment, Extension>, usedCompartments: Set<Compartment>) {
-  let dropped: Compartment[] = []
-  compartments.forEach((_, c) => { if (!usedCompartments.has(c)) dropped.push(c) })
-  if (!dropped.length) return compartments
-  let newCompartments = new Map<Compartment, Extension>()
-  compartments.forEach((e, c) => { if (dropped.indexOf(c) < 0) newCompartments.set(c, e) })
-  return newCompartments
-}
-
-function flatten(extension: Extension, compartments: Map<Compartment, Extension>, compartmentsSeen: Set<Compartment>) {
+function flatten(extension: Extension, compartments: Map<Compartment, Extension>, newCompartments: Map<Compartment, Extension>) {
   let result: (FacetProvider<any> | StateField<any>)[][] = [[], [], [], []]
   let seen = new Map<Extension, number>()
   function inner(ext: Extension, prec: number) {
@@ -440,16 +436,17 @@ function flatten(extension: Extension, compartments: Map<Compartment, Extension>
       if (known >= prec) return
       let found = result[known].indexOf(ext as any)
       if (found > -1) result[known].splice(found, 1)
-      if (ext instanceof CompartmentInstance) compartmentsSeen.delete(ext.compartment)
+      if (ext instanceof CompartmentInstance) newCompartments.delete(ext.compartment)
     }
     seen.set(ext, prec)
     if (Array.isArray(ext)) {
       for (let e of ext) inner(e, prec)
     } else if (ext instanceof CompartmentInstance) {
-      if (compartmentsSeen.has(ext.compartment))
+      if (newCompartments.has(ext.compartment))
         throw new RangeError(`Duplicate use of compartment in extensions`)
-      compartmentsSeen.add(ext.compartment)
-      inner(compartments.get(ext.compartment) || ext.inner, prec)
+      let content = compartments.get(ext.compartment) || ext.inner
+      newCompartments.set(ext.compartment, content)
+      inner(content, prec)
     } else if (ext instanceof PrecExtension) {
       inner(ext.inner, ext.prec)
     } else if (ext instanceof StateField) {
