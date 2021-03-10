@@ -1,3 +1,9 @@
+## 0.18.1 (2021-03-10)
+
+### New features
+
+The new `Compartment.get` method can be used to get the content of a compartment in a given state.
+
 ## 0.18.0 (2021-03-03)
 
 ### Breaking changes
