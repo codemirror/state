@@ -103,7 +103,7 @@ describe("EditorState", () => {
     ist(state.facet(f).join(), "10,20")
     let content2 = [f.of(1), f.of(2)]
     let state2 = state.update({effects: comp.reconfigure(content2)}).state
-    ist(comp.get(state), content2)
+    ist(comp.get(state2), content2)
     ist(state2.facet(f).join(), "1,2,20")
     let state3 = state2.update({effects: comp.reconfigure(f.of(3))}).state
     ist(state3.facet(f).join(), "3,20")
@@ -133,9 +133,9 @@ describe("EditorState", () => {
     ist(state.facet(f).join(), "0,20")
     state = state.update({effects: StateEffect.reconfigure.of(f.of(2))}).state
     ist(state.facet(f).join(), "2")
+    ist(comp.get(state), undefined)
     state = state.update({effects: StateEffect.reconfigure.of([init, f.of(2)])}).state
     ist(state.facet(f).join(), "10,2")
-    ist(comp.get(state), undefined)
   })
 
   it("allows facets computed from fields", () => {
