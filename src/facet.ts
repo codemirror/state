@@ -283,7 +283,7 @@ export class StateField<Value> {
   /// State field instances can be used as
   /// [`Extension`](#state.Extension) values to enable the field in a
   /// given state.
-  extension!: Extension
+  get extension(): Extension { return this }
 }
 
 /// Extension values can be
