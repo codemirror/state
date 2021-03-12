@@ -207,8 +207,11 @@ export class EditorState {
       doc: this.sliceDoc(),
       selection: this.selection.toJSON()
     }
-    if (fields) for (let prop in fields)
-      result[prop] = fields[prop].spec.toJSON!(this.field(fields[prop]), this)
+    if (fields) for (let prop in fields) {
+      let value = fields[prop]
+      if (value instanceof StateField)
+        result[prop] = value.spec.toJSON!(this.field(fields[prop]), this)
+    }
     return result
   }
 
