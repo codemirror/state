@@ -1,3 +1,9 @@
+## 0.18.2 (2021-03-14)
+
+### Bug fixes
+
+Fix unintended ES2020 output (the package contains ES6 code again).
+
 ## 0.18.1 (2021-03-10)
 
 ### New features
