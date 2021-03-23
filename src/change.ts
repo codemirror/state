@@ -157,6 +157,17 @@ export class ChangeDesc {
     }
     return result
   }
+
+  /// Serialize this change desc to a JSON-representable value.
+  toJSON() { return this.sections }
+
+  /// Create a change desc from its JSON representation (as produced
+  /// by [`toJSON`](#state.ChangeDesc.toJSON).
+  static fromJSON(json: any) {
+    if (!Array.isArray(json) || json.length % 2 || json.some(a => typeof a != "number"))
+      throw new RangeError("Invalid JSON representation of ChangeDesc")
+    return new ChangeDesc(json as number[])
+  }
 }
 
 /// This type is used as argument to
