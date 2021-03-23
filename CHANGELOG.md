@@ -1,3 +1,9 @@
+## 0.18.3 (2021-03-23)
+
+### New features
+
+The `ChangeDesc` class now has `toJSON` and `fromJSON` methods.
+
 ## 0.18.2 (2021-03-14)
 
 ### Bug fixes
