@@ -239,6 +239,12 @@ export class Transaction {
   /// Annotation indicating whether a transaction should be added to
   /// the undo history or not.
   static addToHistory = Annotation.define<boolean>()
+
+  /// Annotation indicating (when present and true) that a transaction
+  /// represents a change made by some other actor, not the user. This
+  /// is used, for example, to tag other people's changes in
+  /// collaborative editing.
+  static remote = Annotation.define<boolean>()
 }
 
 function joinRanges(a: readonly number[], b: readonly number[]) {
