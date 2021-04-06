@@ -1,3 +1,9 @@
+## 0.18.4 (2021-04-06)
+
+### New features
+
+The new `Transaction.remote` annotation can be used to mark and recognize transactions created by other actors.
+
 ## 0.18.3 (2021-03-23)
 
 ### New features
