@@ -1,4 +1,4 @@
-import {Text} from "@codemirror/text"
+import {Text, findClusterBreak} from "@codemirror/text"
 import {ChangeSet, ChangeSpec, DefaultSplit} from "./change"
 import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
@@ -325,6 +325,27 @@ export class EditorState {
   ///  - Other (anything else)
   charCategorizer(at: number): (char: string) => CharCategory {
     return makeCategorizer(this.languageDataAt<string>("wordChars", at).join(""))
+  }
+
+  /// Find the word at the given position, meaning the range
+  /// containing all [word](#state.CharCategory.Word) characters
+  /// around it. If no word characters are adjacent to the position,
+  /// this returns null.
+  wordAt(pos: number): SelectionRange | null {
+    let {text, from, length} = this.doc.lineAt(pos)
+    let cat = this.charCategorizer(pos)
+    let start = pos - from, end = pos - from
+    while (start > 0) {
+      let prev = findClusterBreak(text, start, false)
+      if (cat(text.slice(prev, start)) != CharCategory.Word) break
+      start = prev
+    }
+    while (end < length) {
+      let next = findClusterBreak(text, end)
+      if (cat(text.slice(end, next)) != CharCategory.Word) break
+      end = next
+    }
+    return start == end ? EditorSelection.range(start + from, end + from) : null
   }
 
   /// Facet used to register change filters, which are called for each
