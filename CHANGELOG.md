@@ -1,3 +1,9 @@
+## 0.18.6 (2021-04-12)
+
+### New features
+
+The new `EditorState.wordAt` method finds the word at a given position.
+
 ## 0.18.5 (2021-04-08)
 
 ### Bug fixes
