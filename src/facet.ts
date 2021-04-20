@@ -254,14 +254,14 @@ export class StateField<Value> {
   slot(addresses: {[id: number]: number}) {
     let idx = addresses[this.id] >> 1
     return (state: EditorState, tr: Transaction | null) => {
-      if (!tr) {
+      if (!tr || (tr.reconfigured && maybeIndex(tr.startState, this.id) == null)) {
         state.values[idx] = this.create(state)
         return SlotStatus.Changed
       }
       let oldVal, changed = 0
       if (tr.reconfigured) {
-        let oldIdx = maybeIndex(tr.startState, this.id)
-        oldVal = oldIdx == null ? this.create(tr.startState) : tr.startState.values[oldIdx]
+        let oldIdx = maybeIndex(tr.startState, this.id)!
+        oldVal = tr.startState.values[oldIdx]
         changed = SlotStatus.Changed
       } else {
         oldVal = tr.startState.values[idx]

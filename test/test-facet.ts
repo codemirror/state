@@ -132,7 +132,7 @@ describe("EditorState facets", () => {
         return val + 1
       }
     })
-    st = st.update({effects: StateEffect.appendConfig.of(field)}).state
+    st = st.update({effects: StateEffect.appendConfig.of(field)}).state.update({}).state
     ist(events.join(", "), "create, update 0")
     ist(st.field(field), 1)
   })
