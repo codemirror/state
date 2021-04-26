@@ -260,8 +260,7 @@ export class StateField<Value> {
       }
       let oldVal, changed = 0
       if (tr.reconfigured) {
-        let oldIdx = maybeIndex(tr.startState, this.id)!
-        oldVal = tr.startState.values[oldIdx]
+        oldVal = tr.startState.values[maybeIndex(tr.startState, this.id)!]
         changed = SlotStatus.Changed
       } else {
         oldVal = tr.startState.values[idx]
