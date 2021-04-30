@@ -678,7 +678,7 @@ class SpanCursor<T extends RangeValue> {
   // After calling this, if `this.point` != null, the next range is a
   // point. Otherwise, it's a regular range, covered by `this.active`.
   next() {
-    let from = this.to
+    let from = this.to, wasPoint = this.point
     this.point = null
     let trackOpen = this.openStart < 0 ? [] : null, trackExtra = 0
     for (;;) {
@@ -702,6 +702,9 @@ class SpanCursor<T extends RangeValue> {
         let nextVal = this.cursor.value
         if (!nextVal.point) { // Opening a range
           this.addActive(trackOpen)
+          this.cursor.next()
+        } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to && nextVal.endSide == this.endSide) {
+          // Ignore any non-empty points that end precisely at the end of the prev point
           this.cursor.next()
         } else { // New point
           this.point = nextVal
