@@ -1,3 +1,9 @@
+## 0.18.7 (2021-05-04)
+
+### Bug fixes
+
+Fix an issue where state fields might be initialized with a state that they aren't actually part of during reconfiguration.
+
 ## 0.18.6 (2021-04-12)
 
 ### New features
