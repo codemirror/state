@@ -729,17 +729,17 @@ class SpanCursor<T extends RangeValue> {
   activeForPoint(to: number) {
     if (!this.active.length) return this.active
     let active = []
-    for (let i = 0; i < this.active.length; i++) {
-      if (this.activeRank[i] > this.pointRank) break
+    for (let i = this.active.length - 1; i >= 0; i--) {
+      if (this.activeRank[i] < this.pointRank) break
       if (this.activeTo[i] > to || this.activeTo[i] == to && this.active[i].endSide > this.point!.endSide)
         active.push(this.active[i])
     }
-    return active
+    return active.reverse()
   }
 
   openEnd(to: number) {
     let open = 0
-    while (open < this.activeTo.length && this.activeTo[open] > to) open++
+    for (let i = this.activeTo.length - 1; i >= 0 && this.activeTo[i] > to; i--) open++
     return open
   }
 }
