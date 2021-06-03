@@ -326,6 +326,29 @@ export class RangeSet<T extends RangeValue> {
     if (textDiff.empty && textDiff.length == 0) compare(sideA, 0, sideB, 0, 0, comparator)
   }
 
+  /// Compare the contents of two groups of range sets, returning true
+  /// if they are equivalent in the given range.
+  static eq<T extends RangeValue>(
+    oldSets: readonly RangeSet<T>[], newSets: readonly RangeSet<T>[],
+    from = 0, to?: number
+  ) {
+    if (to == null) to = C.Far
+    let a = oldSets.filter(set => set != RangeSet.empty && newSets.indexOf(set) < 0)
+    let b = newSets.filter(set => set != RangeSet.empty && oldSets.indexOf(set) < 0)
+    if (a.length != b.length) return false
+    if (!a.length) return true
+    let sharedChunks = findSharedChunks(a, b)
+    let sideA = new SpanCursor(a, sharedChunks, 0).goto(from), sideB = new SpanCursor(b, sharedChunks, 0).goto(from)
+    for (;;) {
+      if (sideA.to != sideB.to ||
+          !sameValues(sideA.active, sideB.active) ||
+          sideA.point && (!sideB.point || !sideA.point.eq(sideB.point)))
+        return false
+      if (sideA.to >= to) return true
+      sideA.next(); sideB.next()
+    }
+  }
+
   /// Iterate over a group of range sets at the same time, notifying
   /// the iterator about the ranges covering every given piece of
   /// content. Returns the open count (see
