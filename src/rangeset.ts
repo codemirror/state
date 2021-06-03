@@ -200,7 +200,7 @@ export class RangeSet<T extends RangeValue> {
 
   /// The number of ranges in the set.
   get size(): number {
-    if (this == RangeSet.empty) return 0
+    if (this.isEmpty) return 0
     let size = this.nextLayer.size
     for (let chunk of this.chunk) size += chunk.value.length
     return size
@@ -223,7 +223,7 @@ export class RangeSet<T extends RangeValue> {
     let filter = updateSpec.filter as undefined | ((from: number, to: number, value: T) => boolean)
     if (add.length == 0 && !filter) return this
     if (sort) add.slice().sort(cmpRange)
-    if (this == RangeSet.empty) return add.length ? RangeSet.of(add) : this
+    if (this.isEmpty) return add.length ? RangeSet.of(add) : this
 
     let cur = new LayerCursor(this, null, -1).goto(0), i = 0, spill: Range<T>[] = []
     let builder = new RangeSetBuilder<T>()
@@ -245,13 +245,13 @@ export class RangeSet<T extends RangeValue> {
       }
     }
 
-    return builder.finishInner(this.nextLayer == RangeSet.empty && !spill.length ? RangeSet.empty
+    return builder.finishInner(this.nextLayer.isEmpty && !spill.length ? RangeSet.empty
                                : this.nextLayer.update<T>({add: spill, filter, filterFrom, filterTo}))
   }
 
   /// Map this range set through a set of changes, return the new set.
   map(changes: ChangeDesc): RangeSet<T> {
-    if (changes.length == 0 || this == RangeSet.empty) return this
+    if (changes.length == 0 || this.isEmpty) return this
 
     let chunks = [], chunkPos = [], maxPoint = -1
     for (let i = 0; i < this.chunk.length; i++) {
@@ -279,7 +279,7 @@ export class RangeSet<T extends RangeValue> {
   /// be reported in any specific order. When the callback returns
   /// `false`, iteration stops.
   between(from: number, to: number, f: (from: number, to: number, value: T) => void | false): void {
-    if (this == RangeSet.empty) return
+    if (this.isEmpty) return
     for (let i = 0; i < this.chunk.length; i++) {
       let start = this.chunkPos[i], chunk = this.chunk[i]
       if (to >= start && from <= start + chunk.length &&
@@ -293,6 +293,9 @@ export class RangeSet<T extends RangeValue> {
   iter(from: number = 0): RangeCursor<T> {
     return HeapCursor.from([this]).goto(from)
   }
+
+  /// @internal
+  get isEmpty() { return this.nextLayer == this }
 
   /// Iterate over the ranges in a collection of sets, in order,
   /// starting from `from`.
@@ -314,9 +317,9 @@ export class RangeSet<T extends RangeValue> {
     minPointSize: number = -1
   ) {
     let a = oldSets.filter(set => set.maxPoint >= C.BigPointSize ||
-                           set != RangeSet.empty && newSets.indexOf(set) < 0 && set.maxPoint >= minPointSize!)
+                           !set.isEmpty && newSets.indexOf(set) < 0 && set.maxPoint >= minPointSize!)
     let b = newSets.filter(set => set.maxPoint >= C.BigPointSize ||
-                           set != RangeSet.empty && oldSets.indexOf(set) < 0 && set.maxPoint >= minPointSize!)
+                           !set.isEmpty && oldSets.indexOf(set) < 0 && set.maxPoint >= minPointSize!)
     let sharedChunks = findSharedChunks(a, b)
 
     let sideA = new SpanCursor(a, sharedChunks, minPointSize!)
@@ -333,8 +336,8 @@ export class RangeSet<T extends RangeValue> {
     from = 0, to?: number
   ) {
     if (to == null) to = C.Far
-    let a = oldSets.filter(set => set != RangeSet.empty && newSets.indexOf(set) < 0)
-    let b = newSets.filter(set => set != RangeSet.empty && oldSets.indexOf(set) < 0)
+    let a = oldSets.filter(set => !set.isEmpty && newSets.indexOf(set) < 0)
+    let b = newSets.filter(set => !set.isEmpty && oldSets.indexOf(set) < 0)
     if (a.length != b.length) return false
     if (!a.length) return true
     let sharedChunks = findSharedChunks(a, b)
@@ -585,7 +588,7 @@ class HeapCursor<T extends RangeValue> {
   ): HeapCursor<T> | LayerCursor<T> {
     let heap = []
     for (let i = 0; i < sets.length; i++) {
-      for (let cur = sets[i]; cur != RangeSet.empty; cur = cur.nextLayer) {
+      for (let cur = sets[i]; !cur.isEmpty; cur = cur.nextLayer) {
         if (cur.maxPoint >= minPoint)
           heap.push(new LayerCursor(cur, skip, minPoint, i))
       }
