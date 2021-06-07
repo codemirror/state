@@ -389,13 +389,22 @@ export class RangeSet<T extends RangeValue> {
   /// cause the method to sort them.
   static of<T extends RangeValue>(ranges: readonly Range<T>[] | Range<T>, sort = false): RangeSet<T> {
     let build = new RangeSetBuilder<T>()
-    for (let range of ranges instanceof Range ? [ranges] : sort ? ranges.slice().sort(cmpRange) : ranges)
+    for (let range of ranges instanceof Range ? [ranges] : sort ? lazySort(ranges) : ranges)
       build.add(range.from, range.to, range.value)
     return build.finish()
   }
 
   /// The empty set of ranges.
   static empty = new RangeSet<any>([], [], null as any, -1)
+}
+
+function lazySort<T extends RangeValue>(ranges: readonly Range<T>[]): readonly Range<T>[] {
+  if (ranges.length > 1) for (let prev = ranges[0], i = 1; i < ranges.length; i++) {
+    let cur = ranges[i]
+    if (cmpRange(prev, cur) > 0) return ranges.slice().sort(cmpRange)
+    prev = cur
+  }
+  return ranges
 }
 
 // Awkward patch-up to create a cyclic structure.
