@@ -311,9 +311,9 @@ export class ChangeSet extends ChangeDesc {
       total = total ? total.compose(set.map(total)) : set
       sections = []; inserted = []; pos = 0
     }
-    function process(spec: ChangeSpec) {
+    function _process(spec: ChangeSpec) {
       if (Array.isArray(spec)) {
-        for (let sub of spec) process(sub)
+        for (let sub of spec) _process(sub)
       } else if (spec instanceof ChangeSet) {
         if (spec.length != length)
           throw new RangeError(`Mismatched change set length (got ${spec.length}, expected ${length})`)
@@ -334,7 +334,7 @@ export class ChangeSet extends ChangeDesc {
       }
     }
 
-    process(changes)
+    _process(changes)
     flush(!total)
     return total!
   }
