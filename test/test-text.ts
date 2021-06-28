@@ -138,6 +138,14 @@ describe("Text", () => {
     ist(found, text0)
   })
 
+  it("allows negative skip values in iteration", () => {
+    let iter = Text.of(["one", "two", "three", "four"]).iter()
+    ist(iter.next(12).value, "e")
+    ist(iter.next(-12).value, "ne")
+    ist(iter.next(12).value, "our")
+    ist(iter.next(-1000).value, "one")
+  })
+
   it("is partially iterable", () => {
     let found = ""
     for (let iter = doc0.iterRange(500, doc0.length - 500); !iter.next().done;) found += iter.value

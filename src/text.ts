@@ -360,97 +360,110 @@ class RawTextCursor implements TextIterator {
   public lineBreak: boolean = false
   public value: string = ""
   private nodes: Text[]
+  // The offset into the node at each level, shifted one to the left
+  // with the top bit indicating whether the position is before (0) or
+  // after(1) the line break between the adjacent nodes.
   private offsets: number[]
 
   constructor(text: Text, readonly dir: 1 | -1 = 1) {
     this.nodes = [text]
-    this.offsets = [dir > 0 ? 0 : text instanceof TextLeaf ? text.text.length : text.children!.length]
+    this.offsets = [dir > 0 ? 1 : (text instanceof TextLeaf ? text.text.length : text.children!.length) << 1]
   }
 
-  next(skip: number = 0): this {
+  nextInner(skip: number, dir: 1 | -1): this {
+    this.done = this.lineBreak = false
     for (;;) {
       let last = this.nodes.length - 1
-      if (last < 0) {
-        this.done = true
-        this.value = ""
-        this.lineBreak = false
-        return this
-      }
-      let top = this.nodes[last], offset = this.offsets[last]
+      let top = this.nodes[last], offsetValue = this.offsets[last], offset = offsetValue >> 1
       let size = top instanceof TextLeaf ? top.text.length : top.children!.length
-      if (offset == (this.dir > 0 ? size : 0)) {
+      if (offset == (dir > 0 ? size : 0)) {
+        if (last == 0) {
+          this.done = true
+          this.value = ""
+          return this
+        }
+        if (dir > 0) this.offsets[last - 1]++
         this.nodes.pop()
         this.offsets.pop()
-      } else if (!this.lineBreak && offset != (this.dir > 0 ? 0 : size)) {
-        // Internal offset with lineBreak == false means we have to
-        // count the line break at this position
-        this.lineBreak = true
+      } else if ((offsetValue & 1) == (dir > 0 ? 0 : 1)) {
+        this.offsets[last] += dir
         if (skip == 0) {
+          this.lineBreak = true
           this.value = "\n"
           return this
         }
         skip--
       } else if (top instanceof TextLeaf) {
         // Move to the next string
-        let next = top.text[offset - (this.dir < 0 ? 1 : 0)]
-        this.offsets[last] = (offset += this.dir)
-        this.lineBreak = false
+        let next = top.text[offset + (dir < 0 ? -1 : 0)]
+        this.offsets[last] += dir
         if (next.length > Math.max(0, skip)) {
-          this.value = skip == 0 ? next : this.dir > 0 ? next.slice(skip) : next.slice(0, next.length - skip)
+          this.value = skip == 0 ? next : dir > 0 ? next.slice(skip) : next.slice(0, next.length - skip)
           return this
         }
         skip -= next.length
       } else {
-        let next = top.children![this.dir > 0 ? offset : offset - 1]
-        this.offsets[last] = offset + this.dir
-        this.lineBreak = false
+        let next = top.children![offset + (dir < 0 ? -1 : 0)]
         if (skip > next.length) {
           skip -= next.length
+          this.offsets[last] += dir
         } else {
+          if (dir < 0) this.offsets[last]--
           this.nodes.push(next)
-          this.offsets.push(this.dir > 0 ? 0 : next instanceof TextLeaf ? next.text.length : next.children!.length)
+          this.offsets.push(dir > 0 ? 1 : (next instanceof TextLeaf ? next.text.length : next.children!.length) << 1)
         }
       }
     }
+  }
+
+  next(skip: number = 0) {
+    if (skip < 0) {
+      this.nextInner(-skip, (-this.dir) as -1 | 1)
+      skip = this.value.length
+    }
+    return this.nextInner(skip, this.dir)
   }
 }
 
 class PartialTextCursor implements TextIterator {
   cursor: RawTextCursor
-  limit: number
-  skip: number
   value: string = ""
+  pos: number
+  from: number
+  to: number
+  done = false
 
   constructor(text: Text, start: number, end: number) {
     this.cursor = new RawTextCursor(text, start > end ? -1 : 1)
-    if (start > end) {
-      this.skip = text.length - start
-      this.limit = start - end
-    } else {
-      this.skip = start
-      this.limit = end - start
-    }
+    this.pos = start > end ? text.length : 0
+    this.from = Math.min(start, end)
+    this.to = Math.max(start, end)
   }
 
-  next(skip = 0): this {
-    if (this.limit <= 0) {
-      this.limit = -1
-    } else {
-      let {value, lineBreak, done} = this.cursor.next(this.skip + skip)
-      this.skip = 0
-      this.value = value
-      let len = lineBreak ? 1 : value.length
-      if (len > this.limit)
-        this.value = this.cursor.dir > 0 ? value.slice(0, this.limit) : value.slice(len - this.limit)
-      if (done || this.value.length == 0) this.limit = -1
-      else this.limit -= this.value.length
+  nextInner(skip: number, dir: -1 | 1): this {
+    if (dir < 0 ? this.pos <= this.from : this.pos >= this.to) {
+      this.value = ""
+      this.done = true
+      return this
     }
+    this.done = false
+    skip += Math.max(0, dir < 0 ? this.pos - this.to : this.from - this.pos)
+    let limit = dir < 0 ? this.pos - this.from : this.to - this.pos
+    if (skip > limit) skip = limit
+    limit -= skip
+    let {value} = this.cursor.next(skip)
+    this.pos += (value.length + skip) * dir
+    this.value = value.length <= limit ? value : dir < 0 ? value.slice(value.length - limit) : value.slice(0, limit)
     return this
   }
 
-  get lineBreak() { return this.cursor.lineBreak }
+  next(skip = 0) {
+    if (skip < 0) skip = Math.max(skip, this.from - this.pos)
+    else if (skip > 0) skip = Math.min(skip, this.to - this.pos)
+    return this.nextInner(skip, this.cursor.dir)
+  }
 
-  get done() { return this.limit < 0 }
+  get lineBreak() { return this.cursor.lineBreak && this.value != "" }
 }
 
 /// This type describes a line in the document. It is created
