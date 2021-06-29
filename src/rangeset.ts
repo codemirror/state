@@ -95,15 +95,14 @@ class Chunk<T extends RangeValue> {
 
   get length() { return this.to[this.to.length - 1] }
 
-  // With side == -1, return the first index where to >= pos. When
-  // side == 1, the first index where from > pos.
-  findIndex(pos: number, end: -1 | 1, side = end * C.Far, startAt = 0) {
-    if (pos <= 0) return startAt
-    let arr = end < 0 ? this.to : this.from
+  // Find the index of the given position and side. Use the ranges'
+  // `from` pos when `end == false`, `to` when `end == true`.
+  findIndex(pos: number, side: number, end: boolean, startAt = 0) {
+    let arr = end ? this.to : this.from
     for (let lo = startAt, hi = arr.length;;) {
       if (lo == hi) return lo
       let mid = (lo + hi) >> 1
-      let diff = arr[mid] - pos || (end < 0 ? this.value[mid].startSide : this.value[mid].endSide) - side
+      let diff = arr[mid] - pos || (end ? this.value[mid].endSide : this.value[mid].startSide) - side
       if (mid == lo) return diff >= 0 ? lo : hi
       if (diff >= 0) hi = mid
       else lo = mid + 1
@@ -111,7 +110,7 @@ class Chunk<T extends RangeValue> {
   }
 
   between(offset: number, from: number, to: number, f: (from: number, to: number, value: T) => void | false): void | false {
-    for (let i = this.findIndex(from, -1), e = this.findIndex(to, 1, undefined, i); i < e; i++)
+    for (let i = this.findIndex(from, -C.Far, true), e = this.findIndex(to, C.Far, false, i); i < e; i++)
       if (f(this.from[i] + offset, this.to[i] + offset, this.value[i]) === false) return false
   }
 
@@ -536,7 +535,7 @@ class LayerCursor<T extends RangeValue> {
       forward = false
     }
     let rangeIndex = this.chunkIndex == this.layer.chunk.length ? 0
-      : this.layer.chunk[this.chunkIndex].findIndex(pos - this.layer.chunkPos[this.chunkIndex], -1, side)
+      : this.layer.chunk[this.chunkIndex].findIndex(pos - this.layer.chunkPos[this.chunkIndex], side, true)
     if (!forward || this.rangeIndex < rangeIndex) this.rangeIndex = rangeIndex
     this.next()
   }
