@@ -18,8 +18,6 @@ export function countColumn(string: string, n: number, tabSize: number): number 
 /// Find the offset that corresponds to the given column position in a
 /// string, taking extending characters and tab size into account.
 export function findColumn(string: string, col: number, tabSize: number): number {
-  let _compat = arguments[3]
-  if (_compat != null) { col = tabSize; tabSize = _compat } // FIXME remove at next major version
   for (let i = 0, n = 0; i < string.length;) {
     if (n >= col) return i
     n += string.charCodeAt(i) == 9 ? tabSize - (n % tabSize) : 1
