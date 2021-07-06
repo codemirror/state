@@ -35,9 +35,9 @@ describe("countColumn", () => {
 })
 
 describe("findColumn", () => {
-  it("finds positions", () => ist(findColumn("abc", 0, 3, 4).offset, 3))
+  it("finds positions", () => ist(findColumn("abc", 3, 4), 3))
 
-  it("counts tabs", () => ist(findColumn("a\tbc", 0, 4, 4).offset, 2))
+  it("counts tabs", () => ist(findColumn("a\tbc", 4, 4), 2))
 
-  it("handles clusters", () => ist(findColumn("a😎🇫🇷bc", 0, 4, 4).offset, 8))
+  it("handles clusters", () => ist(findColumn("a😎🇫🇷bc", 4, 4), 8))
 })
