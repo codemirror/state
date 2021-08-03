@@ -765,7 +765,7 @@ class SpanCursor<T extends RangeValue> {
     let active = []
     for (let i = this.active.length - 1; i >= 0; i--) {
       if (this.activeRank[i] < this.pointRank) break
-      if (this.activeTo[i] > to || this.activeTo[i] == to && this.active[i].endSide > this.point!.endSide)
+      if (this.activeTo[i] > to || this.activeTo[i] == to && this.active[i].endSide >= this.point!.endSide)
         active.push(this.active[i])
     }
     return active.reverse()
@@ -790,7 +790,8 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
     let diff = (a.to + dPos) - b.to || a.endSide - b.endSide
     let end = diff < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB)
     if (a.point || b.point) {
-      if (!(a.point && b.point && (a.point == b.point || a.point.eq(b.point))))
+      if (!(a.point && b.point && (a.point == b.point || a.point.eq(b.point)) &&
+            sameValues(a.activeForPoint(a.to + dPos), b.activeForPoint(b.to))))
         comparator.comparePoint(pos, clipEnd, a.point, b.point)
     } else {
       if (clipEnd > pos && !sameValues(a.active, b.active)) comparator.compareRange(pos, clipEnd, a.active, b.active)
