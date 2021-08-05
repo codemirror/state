@@ -303,10 +303,10 @@ export class EditorState {
 
   /// Find the values for a given language data field, provided by the
   /// the [`languageData`](#state.EditorState^languageData) facet.
-  languageDataAt<T>(name: string, pos: number): readonly T[] {
+  languageDataAt<T>(name: string, pos: number, side: -1 | 0 | 1 = -1): readonly T[] {
     let values: T[] = []
     for (let provider of this.facet(languageData)) {
-      for (let result of provider(this, pos)) {
+      for (let result of provider(this, pos, side)) {
         if (Object.prototype.hasOwnProperty.call(result, name))
           values.push(result[name])
       }
