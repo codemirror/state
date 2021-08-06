@@ -129,6 +129,8 @@ export interface TransactionSpec {
   effects?: StateEffect<any> | readonly StateEffect<any>[],
   /// Set [annotations](#state.Annotation) for this transaction.
   annotations?: Annotation<any> | readonly Annotation<any>[],
+  /// Shorthand for `annotations: `[`Transaction.userEvent`](#state.Transaction^userEvent)[`.of(...)`.
+  userEvent?: string,
   /// When set to `true`, the transaction is marked as needing to
   /// scroll the current selection into view.
   scrollIntoView?: boolean,
@@ -221,19 +223,43 @@ export class Transaction {
   /// [effect](#state.StateEffect^reconfigure).
   get reconfigured(): boolean { return this.startState.config != this.state.config }
 
+  /// Returns true if the transaction has a [user
+  /// event](#state.Transaction^userEvent) annotation that is equal to
+  /// or more specific than `event`. For example, if the transaction
+  /// has `"select.pointer"` as user event, `"select"` and
+  /// `"select.pointer"` will match it.
+  isUserEvent(event: string) {
+    let e = this.annotation(Transaction.userEvent)
+    return e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == ".")
+  }
+
   /// Annotation used to store transaction timestamps.
   static time = Annotation.define<number>()
 
   /// Annotation used to associate a transaction with a user interface
-  /// event. The view will set this to...
+  /// event. Holds a string identifying the event, using a
+  /// dot-separated format to support attaching more specific
+  /// information. The events used by the core libraries are:
   ///
-  ///  - `"input"` when the user types text
-  ///  - `"delete"` when the user deletes the selection or text near the selection
-  ///  - `"keyboardselection"` when moving the selection via the keyboard
-  ///  - `"pointerselection"` when moving the selection through the pointing device
-  ///  - `"paste"` when pasting content
-  ///  - `"cut"` when cutting
-  ///  - `"drop"` when content is inserted via drag-and-drop
+  ///  - `"input"` when content is entered
+  ///    - `"input.type"` for typed input
+  ///      - `"input.type.compose"` for composition
+  ///    - `"input.paste"` for pasted input
+  ///    - `"input.drop"` when adding content with drag-and-drop
+  ///    - `"input.complete"` when autocompleting
+  ///  - `"delete"` when the user deletes content
+  ///    - `"delete.selection"` when deleting the selection
+  ///    - `"delete.forward"` when deleting forward from the selection
+  ///    - `"delete.backward"` when deleting backward from the selection
+  ///    - `"delete.cut"` when cutting to the clipboard
+  ///  - `"move"` when content is moved
+  ///    - `"move.drop"` when content is moved within the editor through drag-and-drop
+  ///  - `"select"` when explicitly changing the selection
+  ///    - `"select.pointer"` when selecting with a mouse or other pointing device
+  ///  - `"undo"` and `"redo"` for history actions
+  ///
+  /// Use [`isUserEvent`](#state.Transaction.isUserEvent) to check
+  /// whether the annotation matches a given event.
   static userEvent = Annotation.define<string>()
 
   /// Annotation indicating whether a transaction should be added to
@@ -288,13 +314,14 @@ function mergeTransaction(a: ResolvedSpec, b: ResolvedSpec, sequential: boolean)
 }
 
 function resolveTransactionInner(state: EditorState, spec: TransactionSpec, docSize: number): ResolvedSpec {
-  let sel = spec.selection
+  let sel = spec.selection, annotations = asArray(spec.annotations)
+  if (spec.userEvent) annotations = annotations.concat(Transaction.userEvent.of(spec.userEvent))
   return {
     changes: spec.changes instanceof ChangeSet ? spec.changes
       : ChangeSet.of(spec.changes || [], docSize, state.facet(lineSeparator)),
     selection: sel && (sel instanceof EditorSelection ? sel : EditorSelection.single(sel.anchor, sel.head)),
     effects: asArray(spec.effects),
-    annotations: asArray(spec.annotations),
+    annotations,
     scrollIntoView: !!spec.scrollIntoView
   }
 }
