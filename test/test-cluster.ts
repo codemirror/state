@@ -27,11 +27,11 @@ describe("findClusterBreak", () => {
 })
 
 describe("countColumn", () => {
-  it("counts characters", () => ist(countColumn("abc", 0, 4), 3))
+  it("counts characters", () => ist(countColumn("abc", 4), 3))
 
-  it("counts tabs correctly", () => ist(countColumn("a\t\tbc\tx", 0, 4), 13))
+  it("counts tabs correctly", () => ist(countColumn("a\t\tbc\tx", 4), 13))
 
-  it("handles clusters", () => ist(countColumn("a😎🇫🇷", 0, 4), 3))
+  it("handles clusters", () => ist(countColumn("a😎🇫🇷", 4), 3))
 })
 
 describe("findColumn", () => {
