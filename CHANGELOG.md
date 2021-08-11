@@ -1,3 +1,17 @@
+## 0.19.0 (2021-08-11)
+
+### Breaking changes
+
+User event strings now work differently—the events emitted by the core packages follow a different system, and hierarchical event tags can be created by separating the words with dots.
+
+### New features
+
+`languageDataAt` now takes an optional `side` argument to specificy which side of the position you're interested in.
+
+It is now possible to add a user event annotation with a direct `userEvent` property on a transaction spec.
+
+Transactions now have an `isUserEvent` method that can be used to check if it is (a subtype of) some user event type.
+
 ## 0.18.7 (2021-05-04)
 
 ### Bug fixes
