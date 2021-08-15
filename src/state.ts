@@ -345,7 +345,7 @@ export class EditorState {
       if (cat(text.slice(end, next)) != CharCategory.Word) break
       end = next
     }
-    return start == end ? EditorSelection.range(start + from, end + from) : null
+    return start == end ? null : EditorSelection.range(start + from, end + from)
   }
 
   /// Facet used to register change filters, which are called for each
