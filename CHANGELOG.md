@@ -1,3 +1,9 @@
+## 0.19.1 (2021-08-15)
+
+### Bug fixes
+
+Fix a bug where `wordAt` never returned a useful result.
+
 ## 0.19.0 (2021-08-11)
 
 ### Breaking changes
