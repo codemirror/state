@@ -534,9 +534,10 @@ class LayerCursor<T extends RangeValue> {
       this.chunkIndex++
       forward = false
     }
-    let rangeIndex = this.chunkIndex == this.layer.chunk.length ? 0
-      : this.layer.chunk[this.chunkIndex].findIndex(pos - this.layer.chunkPos[this.chunkIndex], side, true)
-    if (!forward || this.rangeIndex < rangeIndex) this.rangeIndex = rangeIndex
+    if (this.chunkIndex < this.layer.chunk.length) {
+      let rangeIndex = this.layer.chunk[this.chunkIndex].findIndex(pos - this.layer.chunkPos[this.chunkIndex], side, true)
+      if (!forward || this.rangeIndex < rangeIndex) this.setRangeIndex(rangeIndex)
+    }
     this.next()
   }
 
@@ -557,16 +558,22 @@ class LayerCursor<T extends RangeValue> {
         this.from = from
         this.to = chunkPos + chunk.to[this.rangeIndex]
         this.value = chunk.value[this.rangeIndex]
-        if (++this.rangeIndex == chunk.value.length) {
-          this.chunkIndex++
-          if (this.skip) {
-            while (this.chunkIndex < this.layer.chunk.length && this.skip.has(this.layer.chunk[this.chunkIndex]))
-              this.chunkIndex++
-          }
-          this.rangeIndex = 0
-        }
+        this.setRangeIndex(this.rangeIndex + 1)
         if (this.minPoint < 0 || this.value.point && this.to - this.from >= this.minPoint) break
       }
+    }
+  }
+
+  setRangeIndex(index: number) {
+    if (index == this.layer.chunk[this.chunkIndex].value.length) {
+      this.chunkIndex++
+      if (this.skip) {
+        while (this.chunkIndex < this.layer.chunk.length && this.skip.has(this.layer.chunk[this.chunkIndex]))
+          this.chunkIndex++
+      }
+      this.rangeIndex = 0
+    } else {
+      this.rangeIndex = index
     }
   }
 
