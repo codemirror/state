@@ -104,6 +104,23 @@ export abstract class Text implements Iterable<string> {
   /// iterator will run in reverse.
   iterRange(from: number, to: number = this.length): TextIterator { return new PartialTextCursor(this, from, to) }
 
+  /// Return a cursor that iterates over the given range of lines,
+  /// _without_ returning the line breaks between, and yielding empty
+  /// strings for empty lines.
+  ///
+  /// When `from` and `to` are given, they should be 1-based line numbers.
+  iterLines(from?: number, to?: number) {
+    let inner
+    if (from == null) {
+      inner = this.iter()
+    } else {
+      if (to == null) to = this.lines + 1
+      let start = this.line(from).from
+      inner = this.iterRange(start, Math.max(start, to == this.lines + 1 ? this.length : to <= 1 ? 0 : this.line(to - 1).to))
+    }
+    return new LineCursor(inner)
+  }
+
   /// @internal
   abstract decompose(from: number, to: number, target: Text[], open: Open): void
 
@@ -464,6 +481,35 @@ class PartialTextCursor implements TextIterator {
   }
 
   get lineBreak() { return this.cursor.lineBreak && this.value != "" }
+}
+
+class LineCursor implements TextIterator {
+  afterBreak = true
+  value = ""
+  done = false
+
+  constructor(readonly inner: TextIterator) {}
+
+  next(skip = 0) {
+    let {done, lineBreak, value} = this.inner.next(skip)
+    if (done) {
+      this.done = true
+      this.value = ""
+    } else if (lineBreak) {
+      if (this.afterBreak) {
+        this.value = ""
+      } else {
+        this.afterBreak = true
+        this.next()
+      }
+    } else {
+      this.value = value
+      this.afterBreak = false
+    }
+    return this
+  }
+
+  get lineBreak() { return false }
 }
 
 /// This type describes a line in the document. It is created

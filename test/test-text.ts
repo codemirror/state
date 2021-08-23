@@ -165,6 +165,21 @@ describe("Text", () => {
     ist(doc0.iterRange(doc0.length - 2, doc0.length - 1).next().value, "9")
   })
 
+  it("can iterate over lines", () => {
+    let doc = Text.of(["ab", "cde", "", "", "f", "", "g"])
+    function get(from?: number, to?: number) {
+      let result = []
+      for (let i = doc.iterLines(from, to); !i.next().done;) result.push(i.value)
+      return result.join("\n")
+    }
+    ist(get(), "ab\ncde\n\n\nf\n\ng")
+    ist(get(1, doc.lines + 1), "ab\ncde\n\n\nf\n\ng")
+    ist(get(2, 3), "cde")
+    ist(get(1, 1), "")
+    ist(get(2, 1), "")
+    ist(get(3), "\n\nf\n\ng")
+  })
+
   it("can convert to JSON", () => {
     for (let i = 0; i < 200; i++) lines.push("line " + i)
     let text = Text.of(lines)
