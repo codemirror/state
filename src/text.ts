@@ -34,9 +34,6 @@ export abstract class Text implements Iterable<string> {
   /// The number of lines in the string (always >= 1).
   abstract readonly lines: number
 
-  /// @internal
-  [Symbol.iterator]!: () => Iterator<string>
-
   /// Get the line description around the given position.
   lineAt(pos: number): Line {
     if (pos < 0 || pos > this.length)
@@ -140,6 +137,8 @@ export abstract class Text implements Iterable<string> {
   /// If this is a branch node, `children` will hold the `Text`
   /// objects that it is made up of. For leaf nodes, this holds null.
   abstract readonly children: readonly Text[] | null
+
+  [Symbol.iterator]!: () => Iterator<string>
 
   /// Create a `Text` instance for the given array of lines.
   static of(text: readonly string[]): Text {
