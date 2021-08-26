@@ -71,7 +71,7 @@ export abstract class Text implements Iterable<string> {
     return TextNode.from(parts, to - from)
   }
 
-  /// Retrive a part of the document as a string
+  /// Retrieve a part of the document as a string
   abstract sliceString(from: number, to?: number, lineSep?: string): string
 
   /// @internal
