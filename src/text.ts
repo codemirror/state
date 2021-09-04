@@ -465,7 +465,6 @@ class PartialTextCursor implements TextIterator {
       this.done = true
       return this
     }
-    this.done = false
     skip += Math.max(0, dir < 0 ? this.pos - this.to : this.from - this.pos)
     let limit = dir < 0 ? this.pos - this.from : this.to - this.pos
     if (skip > limit) skip = limit
@@ -473,6 +472,7 @@ class PartialTextCursor implements TextIterator {
     let {value} = this.cursor.next(skip)
     this.pos += (value.length + skip) * dir
     this.value = value.length <= limit ? value : dir < 0 ? value.slice(value.length - limit) : value.slice(0, limit)
+    this.done = !this.value
     return this
   }
 
