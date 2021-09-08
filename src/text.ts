@@ -77,16 +77,22 @@ export abstract class Text implements Iterable<string> {
   /// @internal
   abstract flatten(target: string[]): void
 
+  /// @internal
+  abstract scanIdentical(other: Text, dir: 1 | -1): number
+
   /// Test whether this text is equal to another instance.
   eq(other: Text): boolean {
     if (other == this) return true
     if (other.length != this.length || other.lines != this.lines) return false
+    let start = this.scanIdentical(other, 1), end = this.length - this.scanIdentical(other, -1)
     let a = new RawTextCursor(this), b = new RawTextCursor(other)
-    for (;;) {
-      a.next()
-      b.next()
+    for (let skip = start, pos = start;;) {
+      a.next(skip)
+      b.next(skip)
+      skip = 0
       if (a.lineBreak != b.lineBreak || a.done != b.done || a.value != b.value) return false
-      if (a.done) return true
+      pos += a.value.length
+      if (a.done || pos >= end) return true
     }
   }
 
@@ -218,6 +224,8 @@ class TextLeaf extends Text {
     for (let line of this.text) target.push(line)
   }
 
+  scanIdentical() { return 0 }
+
   static split(text: readonly string[], target: Text[]): Text[] {
     let part = [], len = -1
     for (let line of text) {
@@ -303,6 +311,19 @@ class TextNode extends Text {
 
   flatten(target: string[]) {
     for (let child of this.children) child.flatten(target)
+  }
+
+  scanIdentical(other: Text, dir: -1 | 1): number {
+    if (!(other instanceof TextNode)) return 0
+    let length = 0
+    let [iA, iB, eA, eB] = dir > 0 ? [0, 0, this.children.length, other.children.length]
+      : [this.children.length - 1, other.children.length - 1, -1, -1]
+    for (;; iA += dir, iB += dir) {
+      if (iA == eA || iB == eB) return length
+      let chA = this.children[iA], chB = other.children[iB]
+      if (chA != chB) return length + chA.scanIdentical(chB, dir)
+      length += chA.length + 1
+    }
   }
 
   static from(children: Text[], length: number = children.reduce((l, ch) => l + ch.length + 1, -1)): Text {

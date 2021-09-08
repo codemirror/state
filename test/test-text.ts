@@ -105,6 +105,8 @@ describe("Text", () => {
     ist(doc2.eq(doc))
     ist(!doc.eq(doc2.replace(5000, 5000, Text.of(["y"]))))
     ist(!doc.eq(doc2.replace(5000, 5001, Text.of(["y"]))))
+    ist(doc.eq(doc.replace(5000, 5001, doc.slice(5000, 5001))))
+    ist(!doc.eq(doc.replace(5000, 5001, Text.of(["y"]))))
   })
 
   it("can be compared despite different tree shape", () => {
