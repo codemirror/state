@@ -3,7 +3,7 @@ import {ChangeSet, ChangeSpec, DefaultSplit} from "./change"
 import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
 import {allowMultipleSelections, changeFilter, transactionFilter, transactionExtender,
-        lineSeparator, languageData} from "./extension"
+        lineSeparator, languageData, readOnly} from "./extension"
 import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment} from "./facet"
 import {CharCategory, makeCategorizer} from "./charcategory"
 
@@ -281,6 +281,23 @@ export class EditorState {
   /// Get the proper [line-break](#state.EditorState^lineSeparator)
   /// string for this state.
   get lineBreak() { return this.facet(EditorState.lineSeparator) || "\n" }
+
+  /// This facet controls the value of the
+  /// [`readOnly`](#state.EditorState.readOnly) getter, which is
+  /// consulted by commands and extensions that implement editing
+  /// functionality to determine whether they should apply. It
+  /// defaults to false, but when its highest-precedence value is
+  /// `true`, such functionality disables itself.
+  ///
+  /// Not to be confused with
+  /// [`EditorView.editable`](#view.EditorView^editable), which
+  /// controls whether the editor's DOM is set to be editable (and
+  /// thus focusable).
+  static readOnly = readOnly
+
+  /// Returns true when the editor is
+  /// [configured](#state.EditorState^readOnly) to be read-only.
+  get readOnly() { return this.facet(readOnly) }
 
   /// Registers translation phrases. The
   /// [`phrase`](#state.EditorState.phrase) method will look through

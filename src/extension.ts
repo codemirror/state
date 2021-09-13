@@ -25,3 +25,7 @@ export const transactionFilter = Facet.define<(tr: Transaction) => TransactionSp
 
 export const transactionExtender =
   Facet.define<(tr: Transaction) => Pick<TransactionSpec, "effects" | "annotations"> | null>()
+
+export const readOnly = Facet.define<boolean, boolean>({
+  combine: values => values.length ? values[0] : false
+})
