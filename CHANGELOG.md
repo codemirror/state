@@ -1,3 +1,9 @@
+## 0.19.2 (2021-09-13)
+
+### New features
+
+The editor state now has a `readOnly` property with a matching facet to control its value.
+
 ## 0.19.1 (2021-08-15)
 
 ### Bug fixes
