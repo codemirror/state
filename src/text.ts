@@ -157,9 +157,6 @@ export abstract class Text implements Iterable<string> {
   static empty: Text
 }
 
-if (typeof Symbol != "undefined")
-  Text.prototype[Symbol.iterator] = function() { return this.iter() }
-
 // Leaves store an array of line strings. There are always line breaks
 // between these strings. Leaves are limited in size and have to be
 // contained in TextNode instances for bigger documents.
@@ -463,6 +460,9 @@ class RawTextCursor implements TextIterator {
     }
     return this.nextInner(skip, this.dir)
   }
+
+  /// @internal
+  [Symbol.iterator]!: () => Iterator<string>
 }
 
 class PartialTextCursor implements TextIterator {
@@ -504,6 +504,9 @@ class PartialTextCursor implements TextIterator {
   }
 
   get lineBreak() { return this.cursor.lineBreak && this.value != "" }
+
+  /// @internal
+  [Symbol.iterator]!: () => Iterator<string>
 }
 
 class LineCursor implements TextIterator {
@@ -533,6 +536,15 @@ class LineCursor implements TextIterator {
   }
 
   get lineBreak() { return false }
+
+  /// @internal
+  [Symbol.iterator]!: () => Iterator<string>
+}
+
+if (typeof Symbol != "undefined") {
+  Text.prototype[Symbol.iterator] = function() { return this.iter() }
+  RawTextCursor.prototype[Symbol.iterator] = PartialTextCursor.prototype[Symbol.iterator] =
+    LineCursor.prototype[Symbol.iterator] = function(this: Iterator<string>) { return this }
 }
 
 /// This type describes a line in the document. It is created
