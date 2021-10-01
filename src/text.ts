@@ -12,7 +12,7 @@ const enum Open { From = 1, To = 2 }
 /// A text iterator iterates over a sequence of strings. When
 /// iterating over a [`Text`](#text.Text) document, result values will
 /// either be lines or line breaks.
-export interface TextIterator extends Iterator<string> {
+export interface TextIterator extends Iterator<string>, Iterable<string> {
   /// Retrieve the next string. Optionally skip a given number of
   /// positions after the current position. Always returns the object
   /// itself.
@@ -111,7 +111,7 @@ export abstract class Text implements Iterable<string> {
   /// strings for empty lines.
   ///
   /// When `from` and `to` are given, they should be 1-based line numbers.
-  iterLines(from?: number, to?: number) {
+  iterLines(from?: number, to?: number): TextIterator {
     let inner
     if (from == null) {
       inner = this.iter()
