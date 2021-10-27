@@ -228,9 +228,9 @@ export class Transaction {
   /// or more specific than `event`. For example, if the transaction
   /// has `"select.pointer"` as user event, `"select"` and
   /// `"select.pointer"` will match it.
-  isUserEvent(event: string) {
+  isUserEvent(event: string): boolean {
     let e = this.annotation(Transaction.userEvent)
-    return e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == ".")
+    return !!(e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == "."))
   }
 
   /// Annotation used to store transaction timestamps.
