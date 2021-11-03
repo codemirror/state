@@ -1,3 +1,9 @@
+## 0.19.3 (2021-11-03)
+
+### New features
+
+The precedence levels (under `Prec`) now have more generic names, because their 'meaningful' names were entirely inappropriate in many situations.
+
 ## 0.19.2 (2021-09-13)
 
 ### New features
