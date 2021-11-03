@@ -295,7 +295,7 @@ export class StateField<Value> {
 /// arbitrarily deep—they will be flattened when processed.
 export type Extension = {extension: Extension} | readonly Extension[]
 
-const Prec_ = {fallback: 3, default: 2, extend: 1, override: 0}
+const Prec_ = {lowest: 4, low: 3, default: 2, high: 1, highest: 0}
 
 function prec(value: number) {
   return (ext: Extension) => new PrecExtension(ext, value) as Extension
@@ -310,16 +310,29 @@ function prec(value: number) {
 /// final ordering of extensions is determined by first sorting by
 /// precedence and then by order within each precedence.
 export const Prec = {
-  /// A precedence below the default precedence, which will cause
-  /// default-precedence extensions to override it even if they are
-  /// specified later in the extension ordering.
-  fallback: prec(Prec_.fallback),
-  /// The regular default precedence.
+  /// The lowest precedence level. Meant for things that should end up
+  /// near the end of the extension order.
+  lowest: prec(Prec_.lowest),
+  /// A lower-than-default precedence, for extensions.
+  low: prec(Prec_.low),
+  /// The default precedence, which is also used for extensions
+  /// without an explicit precedence.
   default: prec(Prec_.default),
-  /// A higher-than-default precedence.
-  extend: prec(Prec_.extend),
-  /// Precedence above the `default` and `extend` precedences.
-  override: prec(Prec_.override)
+  /// A higher-than-default precedence, for extensions that should
+  /// come before those with default precedence.
+  high: prec(Prec_.high),
+  /// The highest precedence level, for extensions that should end up
+  /// near the start of the precedence ordering.
+  highest: prec(Prec_.highest),
+
+  // FIXME Drop these in some future breaking version
+
+  /// Backwards-compatible synonym for `Prec.lowest`.
+  fallback: prec(Prec_.lowest),
+  /// Backwards-compatible synonym for `Prec.high`.
+  extend: prec(Prec_.high),
+  /// Backwards-compatible synonym for `Prec.highest`.
+  override: prec(Prec_.highest)
 }
 
 class PrecExtension {
@@ -427,7 +440,7 @@ export class Configuration {
 }
 
 function flatten(extension: Extension, compartments: Map<Compartment, Extension>, newCompartments: Map<Compartment, Extension>) {
-  let result: (FacetProvider<any> | StateField<any>)[][] = [[], [], [], []]
+  let result: (FacetProvider<any> | StateField<any>)[][] = [[], [], [], [], []]
   let seen = new Map<Extension, number>()
   function inner(ext: Extension, prec: number) {
     let known = seen.get(ext)

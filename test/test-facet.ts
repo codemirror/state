@@ -32,16 +32,16 @@ describe("EditorState facets", () => {
   })
 
   it("sorts extensions by priority", () => {
-    let st = mk(str.of("a"), str.of("b"), Prec.extend(str.of("c")),
-                Prec.override(str.of("d")),
-                Prec.fallback(str.of("e")),
-                Prec.extend(str.of("f")), str.of("g"))
+    let st = mk(str.of("a"), str.of("b"), Prec.high(str.of("c")),
+                Prec.highest(str.of("d")),
+                Prec.low(str.of("e")),
+                Prec.high(str.of("f")), str.of("g"))
     ist(st.facet(str).join(), "d,c,f,a,b,g,e")
   })
 
   it("lets sub-extensions inherit their parent's priority", () => {
     let e = (n: number) => num.of(n)
-    let st = mk(num.of(1), Prec.override(e(2)), e(4))
+    let st = mk(num.of(1), Prec.highest(e(2)), e(4))
     ist(st.facet(num).join(), "2,1,4")
   })
 
