@@ -131,18 +131,23 @@ class FacetProvider<Input> {
     }
 
     return (state: EditorState, tr: Transaction | null) => {
-      if (!tr || tr.reconfigured) {
+      let oldVal = state.values[idx]
+      if (oldVal === Uninitialized) {
         state.values[idx] = getter(state)
         return SlotStatus.Changed
-      } else {
+      }
+      if (tr) {
         let depChanged = (depDoc && tr.docChanged) || (depSel && (tr.docChanged || tr.selection)) || 
           depAddrs.some(addr => (ensureAddr(state, addr) & SlotStatus.Changed) > 0)
-        if (!depChanged) return 0
-        let newVal = getter(state), oldVal = tr.startState.values[idx]
-        if (multi ? compareArray(newVal, oldVal, compare) : compare(newVal, oldVal)) return 0
-        state.values[idx] = newVal
-        return SlotStatus.Changed
+        if (depChanged) {
+          let newVal = getter(state)
+          if (multi ? !compareArray(newVal, oldVal, compare) : !compare(newVal, oldVal)) {
+            state.values[idx] = newVal
+            return SlotStatus.Changed
+          }
+        }
       }
+      return 0
     }
   }
 }
@@ -163,9 +168,8 @@ function dynamicFacetSlot<Input, Output>(
   let dynamic = providerAddrs.filter(p => !(p & 1))
   let idx = addresses[facet.id] >> 1
 
-  return (state: EditorState, tr: Transaction | null) => {
-    let oldAddr = !tr ? null : tr.reconfigured ? tr.startState.config.address[facet.id] : idx << 1
-    let changed = oldAddr == null
+  return (state: EditorState) => {
+    let oldVal = state.values[idx], changed = oldVal === Uninitialized
     for (let dynAddr of dynamic) {
       if (ensureAddr(state, dynAddr) & SlotStatus.Changed) changed = true
     }
@@ -176,9 +180,9 @@ function dynamicFacetSlot<Input, Output>(
       if (providerTypes[i] == Provider.Multi) for (let val of value) values.push(val)
       else values.push(value)
     }
-    let newVal = facet.combine(values)
-    if (oldAddr != null && facet.compare(newVal, getAddr(tr!.startState, oldAddr))) return 0
-    state.values[idx] = newVal
+    let value = facet.combine(values)
+    if (facet.compare(value, oldVal)) return 0
+    state.values[idx] = value
     return SlotStatus.Changed
   }
 }
@@ -215,11 +219,6 @@ type StateFieldSpec<Value> = {
   fromJSON?: (json: any, state: EditorState) => Value
 }
 
-function maybeIndex(state: EditorState, id: number) {
-  let found = state.config.address[id]
-  return found == null ? null : found >> 1
-}
-
 const initField = Facet.define<{field: StateField<unknown>, create: (state: EditorState) => unknown}>({static: true})
 
 /// Fields can store additional information in an editor state, and
@@ -254,21 +253,19 @@ export class StateField<Value> {
   slot(addresses: {[id: number]: number}) {
     let idx = addresses[this.id] >> 1
     return (state: EditorState, tr: Transaction | null) => {
-      if (!tr || (tr.reconfigured && maybeIndex(tr.startState, this.id) == null)) {
+      let oldVal = state.values[idx]
+      if (oldVal === Uninitialized) {
         state.values[idx] = this.create(state)
         return SlotStatus.Changed
       }
-      let oldVal, changed = 0
-      if (tr.reconfigured) {
-        oldVal = tr.startState.values[maybeIndex(tr.startState, this.id)!]
-        changed = SlotStatus.Changed
-      } else {
-        oldVal = tr.startState.values[idx]
+      if (tr) {
+        let value = this.updateF(oldVal, tr)
+        if (!this.compareF(oldVal, value)) {
+          state.values[idx] = value
+          return SlotStatus.Changed
+        }
       }
-      let value = this.updateF(oldVal, tr!)
-      if (!changed && !this.compareF(oldVal, value)) changed = SlotStatus.Changed
-      if (changed) state.values[idx] = value
-      return changed
+      return 0
     }
   }
 
@@ -384,7 +381,7 @@ export class Configuration {
               readonly address: {[id: number]: number},
               readonly staticValues: readonly any[]) {
     while (this.statusTemplate.length < dynamicSlots.length)
-      this.statusTemplate.push(SlotStatus.Uninitialized)
+      this.statusTemplate.push(SlotStatus.Unresolved)
   }
 
   staticFacet<Output>(facet: Facet<any, Output>) {
@@ -478,11 +475,13 @@ function flatten(extension: Extension, compartments: Map<Compartment, Extension>
 }
 
 export const enum SlotStatus {
-  Uninitialized = 0,
+  Unresolved = 0,
   Changed = 1,
   Computed = 2,
   Computing = 4
 }
+
+export const Uninitialized: any = {}
 
 export function ensureAddr(state: EditorState, addr: number) {
   if (addr & 1) return SlotStatus.Computed

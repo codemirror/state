@@ -4,7 +4,7 @@ import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
 import {allowMultipleSelections, changeFilter, transactionFilter, transactionExtender,
         lineSeparator, languageData, readOnly} from "./extension"
-import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment} from "./facet"
+import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment, Uninitialized} from "./facet"
 import {CharCategory, makeCategorizer} from "./charcategory"
 
 /// Options passed when [creating](#state.EditorState^create) an
@@ -53,7 +53,7 @@ export class EditorState {
     if (tr && tr.startState.config == config) {
       this.values = tr.startState.values.slice()
     } else {
-      this.values = config.dynamicSlots.map(_ => null)
+      this.values = config.dynamicSlots.map(_ => Uninitialized)
       // Copy over old values for shared facets/fields if this is a reconfigure
       if (tr) for (let id in config.address) {
         let cur = config.address[id], prev = tr.startState.config.address[id]
