@@ -1,3 +1,9 @@
+## 0.19.4 (2021-11-05)
+
+### Bug fixes
+
+When reconfiguring a state, effects from the reconfiguring transaction can now be seen by newly added state fields.
+
 ## 0.19.3 (2021-11-03)
 
 ### New features
