@@ -132,9 +132,27 @@ describe("EditorState facets", () => {
         return val + 1
       }
     })
-    st = st.update({effects: StateEffect.appendConfig.of(field)}).state.update({}).state
+    st = st.update({effects: StateEffect.appendConfig.of(field)}).state
     ist(events.join(", "), "create, update 0")
     ist(st.field(field), 1)
+  })
+
+  it("applies effects from reconfiguring transaction to new fields", () => {
+    let st = mk()
+    let effect = StateEffect.define<number>()
+    let field = StateField.define<number>({
+      create(state) {
+        return state.facet(num)[0] ?? 0
+      },
+      update(val, tr) {
+        return tr.effects.reduce((val, e) => e.is(effect) ? val + e.value : val, val)
+      }
+    })
+    st = st.update({effects: [
+      StateEffect.appendConfig.of([field, num.of(10)]),
+      effect.of(5)
+    ]}).state
+    ist(st.field(field), 15)
   })
 
   it("errors on cyclic dependencies", () => {

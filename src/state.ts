@@ -33,8 +33,6 @@ export interface EditorStateConfig {
 /// just break things.
 export class EditorState {
   /// @internal
-  readonly values: any[]
-  /// @internal
   readonly status: SlotStatus[]
   /// @internal
   applying: null | Transaction = null
@@ -47,20 +45,11 @@ export class EditorState {
     readonly doc: Text,
     /// The current selection.
     readonly selection: EditorSelection,
-    tr: Transaction | null = null
+    /// @internal
+    readonly values: any[],
+    tr: Transaction | null = null,
   ) {
     this.status = config.statusTemplate.slice()
-    if (tr && tr.startState.config == config) {
-      this.values = tr.startState.values.slice()
-    } else {
-      this.values = config.dynamicSlots.map(_ => Uninitialized)
-      // Copy over old values for shared facets/fields if this is a reconfigure
-      if (tr) for (let id in config.address) {
-        let cur = config.address[id], prev = tr.startState.config.address[id]
-        if (prev != null && (cur & 1) == 0) this.values[cur >> 1] = getAddr(tr.startState, prev)
-      }
-    }
-
     this.applying = tr
     // Fill in the computed state immediately, so that further queries
     // for it made during the update return this state
@@ -121,7 +110,21 @@ export class EditorState {
         base = asArray(base).concat(effect.value)
       }
     }
-    new EditorState(conf || Configuration.resolve(base, compartments, this), tr.newDoc, tr.newSelection, tr)
+    let startValues
+    if (!conf) {
+      conf = Configuration.resolve(base, compartments, this)
+      let updatedValues = conf.dynamicSlots.map(_ => Uninitialized)
+      // Copy over old values for shared facets/fields
+      for (let id in conf.address) {
+        let cur = conf.address[id], prev = this.config.address[id]
+        if (prev != null && (cur & 1) == 0) updatedValues[cur >> 1] = getAddr(this, prev)
+      }
+      let intermediateState = new EditorState(conf, this.doc, this.selection, updatedValues, null)
+      startValues = intermediateState.values
+    } else {
+      startValues = tr.startState.values.slice()
+    }
+    new EditorState(conf, tr.newDoc, tr.newSelection, startValues, tr)
   }
 
   /// Create a [transaction spec](#state.TransactionSpec) that
@@ -247,7 +250,7 @@ export class EditorState {
       : EditorSelection.single(config.selection.anchor, config.selection.head)
     checkSelection(selection, doc.length)
     if (!configuration.staticFacet(allowMultipleSelections)) selection = selection.asSingle()
-    return new EditorState(configuration, doc, selection)
+    return new EditorState(configuration, doc, selection, configuration.dynamicSlots.map(_ => Uninitialized))
   }
 
   /// A facet that, when enabled, causes the editor to allow multiple
