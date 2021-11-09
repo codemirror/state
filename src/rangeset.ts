@@ -315,11 +315,9 @@ export class RangeSet<T extends RangeValue> {
     /// the given size. When -1, all ranges are compared.
     minPointSize: number = -1
   ) {
-    let a = oldSets.filter(set => set.maxPoint >= C.BigPointSize ||
-                           !set.isEmpty && newSets.indexOf(set) < 0 && set.maxPoint >= minPointSize!)
-    let b = newSets.filter(set => set.maxPoint >= C.BigPointSize ||
-                           !set.isEmpty && oldSets.indexOf(set) < 0 && set.maxPoint >= minPointSize!)
-    let sharedChunks = findSharedChunks(a, b)
+    let a = oldSets.filter(set => set.maxPoint >= C.BigPointSize || !set.isEmpty && set.maxPoint >= minPointSize!)
+    let b = newSets.filter(set => set.maxPoint >= C.BigPointSize || !set.isEmpty && set.maxPoint >= minPointSize!)
+    let sharedChunks = findSharedChunks(a, b, textDiff)
 
     let sideA = new SpanCursor(a, sharedChunks, minPointSize!)
     let sideB = new SpanCursor(b, sharedChunks, minPointSize!)
@@ -492,14 +490,16 @@ export class RangeSetBuilder<T extends RangeValue> {
   }
 }
 
-function findSharedChunks(a: readonly RangeSet<any>[], b: readonly RangeSet<any>[]) {
+function findSharedChunks(a: readonly RangeSet<any>[], b: readonly RangeSet<any>[], textDiff?: ChangeDesc) {
   let inA = new Map<Chunk<any>, number>()
   for (let set of a) for (let i = 0; i < set.chunk.length; i++)
     if (set.chunk[i].maxPoint < C.BigPointSize) inA.set(set.chunk[i], set.chunkPos[i])
   let shared = new Set<Chunk<any>>()
-  for (let set of b) for (let i = 0; i < set.chunk.length; i++)
-    if (inA.get(set.chunk[i]) == set.chunkPos[i])
+  for (let set of b) for (let i = 0; i < set.chunk.length; i++) {
+    let known = inA.get(set.chunk[i])
+    if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set.chunkPos[i])
       shared.add(set.chunk[i])
+  }
   return shared
 }
 
