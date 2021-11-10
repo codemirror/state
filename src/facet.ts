@@ -168,8 +168,8 @@ function dynamicFacetSlot<Input, Output>(
   let dynamic = providerAddrs.filter(p => !(p & 1))
   let idx = addresses[facet.id] >> 1
 
-  return (state: EditorState) => {
-    let oldVal = state.values[idx], changed = oldVal === Uninitialized
+  return (state: EditorState, tr: Transaction | null) => {
+    let oldVal = state.values[idx], changed = oldVal === Uninitialized || !tr
     for (let dynAddr of dynamic) {
       if (ensureAddr(state, dynAddr) & SlotStatus.Changed) changed = true
     }
