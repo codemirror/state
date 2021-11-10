@@ -1,3 +1,9 @@
+## 0.19.5 (2021-11-10)
+
+### Bug fixes
+
+Fix a bug that would cause dynamic facet values influenced by a state reconfiguration to not properly recompute.
+
 ## 0.19.4 (2021-11-05)
 
 ### Bug fixes
