@@ -181,7 +181,7 @@ function dynamicFacetSlot<Input, Output>(
       else values.push(value)
     }
     let value = facet.combine(values)
-    if (facet.compare(value, oldVal)) return 0
+    if (oldVal !== Uninitialized && facet.compare(value, oldVal)) return 0
     state.values[idx] = value
     return SlotStatus.Changed
   }
