@@ -344,7 +344,7 @@ export class RangeSet<T extends RangeValue> {
           !sameValues(sideA.active, sideB.active) ||
           sideA.point && (!sideB.point || !sideA.point.eq(sideB.point)))
         return false
-      if (sideA.to >= to) return true
+      if (sideA.to > to) return true
       sideA.next(); sideB.next()
     }
   }
