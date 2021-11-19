@@ -1,3 +1,11 @@
+## 0.19.6 (2021-11-19)
+
+### Bug fixes
+
+Fix a bug that caused facet compare functions to be called with an invalid value in some situations.
+
+Fix a bug that caused dynamic facet values to be incorrectly kept unchanged when reconfiguration changed one of their dependencies.
+
 ## 0.19.5 (2021-11-10)
 
 ### Bug fixes
