@@ -402,9 +402,12 @@ export class Configuration {
     let address: {[id: number]: number} = Object.create(null)
     let staticValues: any[] = []
     let dynamicSlots: ((address: {[id: number]: number}) => DynamicSlot)[] = []
+    let dynamicDeps: number[][] = []
+
     for (let field of fields) {
       address[field.id] = dynamicSlots.length << 1
       dynamicSlots.push(a => field.slot(a))
+      dynamicDeps.push([])
     }
     for (let id in facets) {
       let providers = facets[id], facet = providers[0].facet
@@ -425,14 +428,36 @@ export class Configuration {
           } else {
             address[p.id] = dynamicSlots.length << 1
             dynamicSlots.push(a => p.dynamicSlot(a))
+            dynamicDeps.push(p.dependencies.filter(d => typeof d != "string").map(d => (d as {id: number}).id))
           }
         }
         address[facet.id] = dynamicSlots.length << 1
         dynamicSlots.push(a => dynamicFacetSlot(a, facet, providers))
+        dynamicDeps.push(providers.filter(p => p.type != Provider.Static).map(d => d.id))
       }
     }
 
-    return new Configuration(base, newCompartments, dynamicSlots.map(f => f(address)), address, staticValues)
+    let dynamicValues = dynamicSlots.map(_ => Uninitialized)
+    if (oldState) {
+      let canReuse = (id: number, depth: number): boolean => {
+        if (depth > 7) return false
+        let addr = address[id]
+        if (!(addr & 1)) return dynamicDeps[addr >> 1].every(id => canReuse(id, depth + 1))
+        let oldAddr = oldState!.config.address[id]
+        return oldAddr != null && getAddr(oldState!, oldAddr) == staticValues[addr >> 1]
+      }
+      // Copy over old values for shared facets/fields, if we can
+      // prove that they don't need to be recomputed.
+      for (let id in address) {
+        let cur = address[id], prev = oldState.config.address[id]
+        if (prev != null && (cur & 1) == 0 && canReuse(+id, 0)) dynamicValues[cur >> 1] = getAddr(oldState, prev)
+      }
+    }
+
+    return {
+      configuration: new Configuration(base, newCompartments, dynamicSlots.map(f => f(address)), address, staticValues),
+      values: dynamicValues
+    }
   }
 }
 

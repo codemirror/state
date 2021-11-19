@@ -4,7 +4,7 @@ import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
 import {allowMultipleSelections, changeFilter, transactionFilter, transactionExtender,
         lineSeparator, languageData, readOnly} from "./extension"
-import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment, Uninitialized} from "./facet"
+import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment} from "./facet"
 import {CharCategory, makeCategorizer} from "./charcategory"
 
 /// Options passed when [creating](#state.EditorState^create) an
@@ -112,14 +112,9 @@ export class EditorState {
     }
     let startValues
     if (!conf) {
-      conf = Configuration.resolve(base, compartments, this)
-      let updatedValues = conf.dynamicSlots.map(_ => Uninitialized)
-      // Copy over old values for shared facets/fields
-      for (let id in conf.address) {
-        let cur = conf.address[id], prev = this.config.address[id]
-        if (prev != null && (cur & 1) == 0) updatedValues[cur >> 1] = getAddr(this, prev)
-      }
-      let intermediateState = new EditorState(conf, this.doc, this.selection, updatedValues, null)
+      let resolved = Configuration.resolve(base, compartments, this)
+      conf = resolved.configuration
+      let intermediateState = new EditorState(conf, this.doc, this.selection, resolved.values, null)
       startValues = intermediateState.values
     } else {
       startValues = tr.startState.values.slice()
@@ -242,7 +237,7 @@ export class EditorState {
   /// initializing an editor—updated states are created by applying
   /// transactions.
   static create(config: EditorStateConfig = {}): EditorState {
-    let configuration = Configuration.resolve(config.extensions || [], new Map)
+    let {configuration, values} = Configuration.resolve(config.extensions || [], new Map)
     let doc = config.doc instanceof Text ? config.doc
       : Text.of((config.doc || "").split(configuration.staticFacet(EditorState.lineSeparator) || DefaultSplit))
     let selection = !config.selection ? EditorSelection.single(0)
@@ -250,7 +245,7 @@ export class EditorState {
       : EditorSelection.single(config.selection.anchor, config.selection.head)
     checkSelection(selection, doc.length)
     if (!configuration.staticFacet(allowMultipleSelections)) selection = selection.asSingle()
-    return new EditorState(configuration, doc, selection, configuration.dynamicSlots.map(_ => Uninitialized))
+    return new EditorState(configuration, doc, selection, values)
   }
 
   /// A facet that, when enabled, causes the editor to allow multiple

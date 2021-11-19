@@ -159,4 +159,11 @@ describe("EditorState facets", () => {
     ist.throws(() => mk(num.compute([str], s => s.facet(str).length), str.compute([num], s => s.facet(num).join())),
                /cyclic/i)
   })
+
+  it("updates facets computed from static values on reconfigure", () => {
+    let st = mk(num.compute([str], state => state.facet(str).length), str.of("A"))
+    st = st.update({effects: StateEffect.appendConfig.of(str.of("B"))}).state
+    ist(st.facet(num).join(","), "2")
+    ist(st.facet(num), st.update({effects: StateEffect.appendConfig.of(bool.of(false))}).state.facet(num))
+  })
 })
