@@ -740,8 +740,7 @@ class SpanCursor<T extends RangeValue> {
         if (!nextVal.point) { // Opening a range
           this.addActive(trackOpen)
           this.cursor.next()
-        } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to &&
-                   nextVal.endSide == this.endSide) {
+        } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to) {
           // Ignore any non-empty points that end precisely at the end of the prev point
           this.cursor.next()
         } else { // New point
