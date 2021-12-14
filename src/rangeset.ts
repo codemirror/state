@@ -75,10 +75,6 @@ export interface SpanIterator<T extends RangeValue> {
 const enum C {
   // The maximum amount of ranges to store in a single chunk
   ChunkSize = 250,
-  // Chunks with points of this size are never skipped during
-  // compare, since moving past those points is likely to speed
-  // up, rather than slow down, the comparison.
-  BigPointSize = 500,
   // A large (fixnum) value to use for max/min values.
   Far = 1e9
 }
@@ -315,8 +311,8 @@ export class RangeSet<T extends RangeValue> {
     /// the given size. When -1, all ranges are compared.
     minPointSize: number = -1
   ) {
-    let a = oldSets.filter(set => set.maxPoint >= C.BigPointSize || !set.isEmpty && set.maxPoint >= minPointSize!)
-    let b = newSets.filter(set => set.maxPoint >= C.BigPointSize || !set.isEmpty && set.maxPoint >= minPointSize!)
+    let a = oldSets.filter(set => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize!)
+    let b = newSets.filter(set => set.maxPoint > 0 || !set.isEmpty && set.maxPoint >= minPointSize!)
     let sharedChunks = findSharedChunks(a, b, textDiff)
 
     let sideA = new SpanCursor(a, sharedChunks, minPointSize!)
@@ -493,7 +489,7 @@ export class RangeSetBuilder<T extends RangeValue> {
 function findSharedChunks(a: readonly RangeSet<any>[], b: readonly RangeSet<any>[], textDiff?: ChangeDesc) {
   let inA = new Map<Chunk<any>, number>()
   for (let set of a) for (let i = 0; i < set.chunk.length; i++)
-    if (set.chunk[i].maxPoint < C.BigPointSize) inA.set(set.chunk[i], set.chunkPos[i])
+    if (set.chunk[i].maxPoint <= 0) inA.set(set.chunk[i], set.chunkPos[i])
   let shared = new Set<Chunk<any>>()
   for (let set of b) for (let i = 0; i < set.chunk.length; i++) {
     let known = inA.get(set.chunk[i])
@@ -744,7 +740,8 @@ class SpanCursor<T extends RangeValue> {
         if (!nextVal.point) { // Opening a range
           this.addActive(trackOpen)
           this.cursor.next()
-        } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to && nextVal.endSide == this.endSide) {
+        } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to &&
+                   nextVal.endSide == this.endSide) {
           // Ignore any non-empty points that end precisely at the end of the prev point
           this.cursor.next()
         } else { // New point
