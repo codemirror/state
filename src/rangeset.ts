@@ -70,6 +70,9 @@ export interface SpanIterator<T extends RangeValue> {
   /// the point started before the iterated range, `openStart` will be
   /// `active.length + 1` to signal this.
   point(from: number, to: number, value: T, active: readonly T[], openStart: number): void
+  /// When provided, this will be called for each point processed,
+  /// causing the ones for which it returns false to be ignored.
+  filterPoint?(from: number, to: number, value: T, index: number): boolean
 }
 
 const enum C {
@@ -357,7 +360,7 @@ export class RangeSet<T extends RangeValue> {
     /// size are taken into account.
     minPointSize: number = -1
   ): number {
-    let cursor = new SpanCursor(sets, null, minPointSize).goto(from), pos = from
+    let cursor = new SpanCursor(sets, null, minPointSize, iterator.filterPoint?.bind(iterator)).goto(from), pos = from
     let open = cursor.openStart
     for (;;) {
       let curTo = Math.min(cursor.to, to)
@@ -674,7 +677,8 @@ class SpanCursor<T extends RangeValue> {
 
   constructor(sets: readonly RangeSet<T>[],
               skip: Set<Chunk<T>> | null,
-              readonly minPoint: number) {
+              readonly minPoint: number,
+              readonly filterPoint: (from: number, to: number, value: T, index: number) => boolean = () => true) {
     this.cursor = HeapCursor.from(sets, skip, minPoint)
   }
 
@@ -742,6 +746,8 @@ class SpanCursor<T extends RangeValue> {
           this.cursor.next()
         } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to) {
           // Ignore any non-empty points that end precisely at the end of the prev point
+          this.cursor.next()
+        } else if (!this.filterPoint(this.cursor.from, this.cursor.to, this.cursor.value, this.cursor.rank)) {
           this.cursor.next()
         } else { // New point
           this.point = nextVal
