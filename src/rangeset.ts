@@ -496,7 +496,8 @@ function findSharedChunks(a: readonly RangeSet<any>[], b: readonly RangeSet<any>
   let shared = new Set<Chunk<any>>()
   for (let set of b) for (let i = 0; i < set.chunk.length; i++) {
     let known = inA.get(set.chunk[i])
-    if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set.chunkPos[i])
+    if (known != null && (textDiff ? textDiff.mapPos(known) : known) == set.chunkPos[i] &&
+        !textDiff?.touchesRange(known, known + set.chunk[i].length))
       shared.add(set.chunk[i])
   }
   return shared
