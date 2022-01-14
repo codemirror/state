@@ -23,13 +23,14 @@ const ZWJ = 0x200d
 /// Returns a next grapheme cluster break _after_ (not equal to)
 /// `pos`, if `forward` is true, or before otherwise. Returns `pos`
 /// itself if no further cluster break is available in the string.
-/// Moves across surrogate pairs, extending characters, characters
-/// joined with zero-width joiners, and flag emoji.
-export function findClusterBreak(str: string, pos: number, forward = true) {
-  return (forward ? nextClusterBreak : prevClusterBreak)(str, pos)
+/// Moves across surrogate pairs, extending characters (when
+/// `includeExtending` is true), characters joined with zero-width
+/// joiners, and flag emoji.
+export function findClusterBreak(str: string, pos: number, forward = true, includeExtending = true) {
+  return (forward ? nextClusterBreak : prevClusterBreak)(str, pos, includeExtending)
 }
 
-function nextClusterBreak(str: string, pos: number) {
+function nextClusterBreak(str: string, pos: number, includeExtending: boolean) {
   if (pos == str.length) return pos
   // If pos is in the middle of a surrogate pair, move to its start
   if (pos && surrogateLow(str.charCodeAt(pos)) && surrogateHigh(str.charCodeAt(pos - 1))) pos--
@@ -37,7 +38,7 @@ function nextClusterBreak(str: string, pos: number) {
   pos += codePointSize(prev)
   while (pos < str.length) {
     let next = codePointAt(str, pos)
-    if (prev == ZWJ || next == ZWJ || isExtendingChar(next)) {
+    if (prev == ZWJ || next == ZWJ || includeExtending && isExtendingChar(next)) {
       pos += codePointSize(next)
       prev = next
     } else if (isRegionalIndicator(next)) {
@@ -52,9 +53,9 @@ function nextClusterBreak(str: string, pos: number) {
   return pos
 }
 
-function prevClusterBreak(str: string, pos: number) {
+function prevClusterBreak(str: string, pos: number, includeExtending: boolean) {
   while (pos > 0) {
-    let found = nextClusterBreak(str, pos - 2)
+    let found = nextClusterBreak(str, pos - 2, includeExtending)
     if (found < pos) return found
     pos--
   }
