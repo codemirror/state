@@ -169,7 +169,7 @@ function dynamicFacetSlot<Input, Output>(
   let idx = addresses[facet.id] >> 1
 
   return (state: EditorState, tr: Transaction | null) => {
-    let oldVal = state.values[idx], changed = oldVal === Uninitialized || !tr
+    let oldVal = state.values[idx], changed = oldVal === Uninitialized
     for (let dynAddr of dynamic) {
       if (ensureAddr(state, dynAddr) & SlotStatus.Changed) changed = true
     }
@@ -379,7 +379,8 @@ export class Configuration {
               readonly compartments: Map<Compartment, Extension>,
               readonly dynamicSlots: DynamicSlot[],
               readonly address: {[id: number]: number},
-              readonly staticValues: readonly any[]) {
+              readonly staticValues: readonly any[],
+              readonly facets: {[id: number]: readonly FacetProvider<any>[]}) {
     while (this.statusTemplate.length < dynamicSlots.length)
       this.statusTemplate.push(SlotStatus.Unresolved)
   }
@@ -402,60 +403,59 @@ export class Configuration {
     let address: {[id: number]: number} = Object.create(null)
     let staticValues: any[] = []
     let dynamicSlots: ((address: {[id: number]: number}) => DynamicSlot)[] = []
-    let dynamicDeps: number[][] = []
+    let dynamicValues: any[] = []
 
     for (let field of fields) {
       address[field.id] = dynamicSlots.length << 1
       dynamicSlots.push(a => field.slot(a))
-      dynamicDeps.push([])
+      dynamicValues.push(oldState && oldState.config.address[field.id] != null ? oldState.field(field) : Uninitialized)
     }
+
+    let canReuseCache: Map<Facet<any>, boolean> = new Map
+    let canReuseDep = (dep: Slot<any>) => {
+      if (!(dep instanceof Facet)) return true
+      let cached = canReuseCache.get(dep)
+      if (cached != null) return cached
+      canReuseCache.set(dep, false)
+      if (!oldFacets || !sameArray(oldFacets[dep.id] || [], facets[dep.id] || [])) return
+      for (let input of facets[dep.id] || [])
+        if (!input.dependencies.every(canReuseDep)) return
+      canReuseCache.set(dep, true)
+    }
+
+    let oldFacets = oldState?.config.facets
     for (let id in facets) {
       let providers = facets[id], facet = providers[0].facet
+      let oldProviders = oldFacets && oldFacets[id] || []
+      let canReuse = sameArray(providers, oldProviders)
       if (providers.every(p => p.type == Provider.Static)) {
         address[facet.id] = (staticValues.length << 1) | 1
-        let value = facet.combine(providers.map(p => p.value))
-        let oldAddr = oldState ? oldState.config.address[facet.id] : null
-        if (oldAddr != null) {
-          let oldVal = getAddr(oldState!, oldAddr)
-          if (facet.compare(value, oldVal)) value = oldVal
-        }
+        let value = canReuse ? oldState!.facet(facet) : facet.combine(providers.map(p => p.value)), oldValue
+        if (!canReuse && oldState && facet.compare(value, oldValue = oldState.facet(facet))) value = oldValue
         staticValues.push(value)
       } else {
         for (let p of providers) {
+          let canReuseThis =  p.dependencies.every(canReuseDep)
+          if (!canReuseThis) canReuse = false
           if (p.type == Provider.Static) {
             address[p.id] = (staticValues.length << 1) | 1
             staticValues.push(p.value)
           } else {
             address[p.id] = dynamicSlots.length << 1
             dynamicSlots.push(a => p.dynamicSlot(a))
-            dynamicDeps.push(p.dependencies.filter(d => typeof d != "string").map(d => (d as {id: number}).id))
+            let oldAddr = oldState && canReuseThis ? oldState.config.address[p.id] : null
+            dynamicValues.push(oldAddr != null ? getAddr(oldState!, oldAddr) : Uninitialized)
           }
         }
         address[facet.id] = dynamicSlots.length << 1
         dynamicSlots.push(a => dynamicFacetSlot(a, facet, providers))
-        dynamicDeps.push(providers.filter(p => p.type != Provider.Static).map(d => d.id))
+        dynamicValues.push(canReuse || oldProviders.length ? oldState!.facet(facet) : Uninitialized)
       }
     }
 
-    let dynamicValues = dynamicSlots.map(_ => Uninitialized)
-    if (oldState) {
-      let canReuse = (id: number, depth: number): boolean => {
-        if (depth > 7) return false
-        let addr = address[id]
-        if (!(addr & 1)) return dynamicDeps[addr >> 1].every(id => canReuse(id, depth + 1))
-        let oldAddr = oldState!.config.address[id]
-        return oldAddr != null && getAddr(oldState!, oldAddr) == staticValues[addr >> 1]
-      }
-      // Copy over old values for shared facets/fields, if we can
-      // prove that they don't need to be recomputed.
-      for (let id in address) {
-        let cur = address[id], prev = oldState.config.address[id]
-        if (prev != null && (cur & 1) == 0 && canReuse(+id, 0)) dynamicValues[cur >> 1] = getAddr(oldState, prev)
-      }
-    }
-
+    let dynamic = dynamicSlots.map(f => f(address))
     return {
-      configuration: new Configuration(base, newCompartments, dynamicSlots.map(f => f(address)), address, staticValues),
+      configuration: new Configuration(base, newCompartments, dynamic, address, staticValues, facets),
       values: dynamicValues
     }
   }

@@ -113,6 +113,15 @@ describe("EditorState facets", () => {
     ist(st2.facet(str).length, 0)
   })
 
+  it("survives unrelated reconfiguration even without deep-compare", () => {
+    let f = Facet.define<number, {count: number}>({
+      combine: v => ({count: v.length})
+    })
+    let st = mk(f.compute(["doc"], s => s.doc.length), f.of(2))
+    let st2 = st.update({effects: StateEffect.appendConfig.of(str.of("hi"))}).state
+    ist(st.facet(f), st2.facet(f))
+  })
+
   it("preserves static facets across reconfiguration", () => {
     let st = mk(num.of(1), num.of(2), str.of("3"))
     let st2 = st.update({effects: StateEffect.reconfigure.of([num.of(1), num.of(2)])}).state
