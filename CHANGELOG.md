@@ -1,3 +1,11 @@
+## 0.19.7 (2022-02-11)
+
+### Bug fixes
+
+Avoid recomputing facets on state reconfiguration if that facet's inputs stayed precisely the same.
+
+Selection ranges created with `EditorSelection.range` will now have an assoc pointing at their anchor, when non-empty.
+
 ## 0.19.6 (2021-11-19)
 
 ### Bug fixes
