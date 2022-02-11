@@ -244,7 +244,9 @@ export class ChangeSet extends ChangeDesc {
   map(other: ChangeDesc, before = false): ChangeSet { return other.empty ? this : mapSet(this, other, before, true) }
 
   /// Iterate over the changed ranges in the document, calling `f` for
-  /// each.
+  /// each, with the range in the original document (`fromA`-`toA`)
+  /// and the range that replaces it in the new document
+  /// (`fromB`-`toB`).
   ///
   /// When `individual` is true, adjacent changes are reported
   /// separately.
