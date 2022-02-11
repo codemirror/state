@@ -189,7 +189,8 @@ export class EditorSelection {
   /// Create a selection range.
   static range(anchor: number, head: number, goalColumn?: number) {
     let goal = (goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset
-    return head < anchor ? new SelectionRange(head, anchor, RangeFlag.Inverted | goal) : new SelectionRange(anchor, head, goal)
+    return head < anchor ? new SelectionRange(head, anchor, RangeFlag.Inverted | goal | RangeFlag.AssocAfter)
+      : new SelectionRange(anchor, head, goal | (head > anchor ? RangeFlag.AssocBefore : 0))
   }
 }
 
