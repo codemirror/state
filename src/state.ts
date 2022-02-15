@@ -4,7 +4,7 @@ import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
 import {allowMultipleSelections, changeFilter, transactionFilter, transactionExtender,
         lineSeparator, languageData, readOnly} from "./extension"
-import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment} from "./facet"
+import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment, DynamicSlot} from "./facet"
 import {CharCategory, makeCategorizer} from "./charcategory"
 
 /// Options passed when [creating](#state.EditorState^create) an
@@ -35,7 +35,7 @@ export class EditorState {
   /// @internal
   readonly status: SlotStatus[]
   /// @internal
-  applying: null | Transaction = null
+  computeSlot: null | ((state: EditorState, slot: DynamicSlot) => SlotStatus)
 
   /// @internal
   constructor(
@@ -47,15 +47,16 @@ export class EditorState {
     readonly selection: EditorSelection,
     /// @internal
     readonly values: any[],
-    tr: Transaction | null = null,
+    computeSlot: (state: EditorState, slot: DynamicSlot) => SlotStatus,
+    tr: Transaction | null
   ) {
     this.status = config.statusTemplate.slice()
-    this.applying = tr
+    this.computeSlot = computeSlot
     // Fill in the computed state immediately, so that further queries
     // for it made during the update return this state
     if (tr) tr._state = this
     for (let i = 0; i < this.config.dynamicSlots.length; i++) ensureAddr(this, i << 1)
-    this.applying = null
+    this.computeSlot = null
   }
 
   /// Retrieve the value of a [state field](#state.StateField). Throws
@@ -112,14 +113,14 @@ export class EditorState {
     }
     let startValues
     if (!conf) {
-      let resolved = Configuration.resolve(base, compartments, this)
-      conf = resolved.configuration
-      let intermediateState = new EditorState(conf, this.doc, this.selection, resolved.values, null)
+      conf = Configuration.resolve(base, compartments, this)
+      let intermediateState = new EditorState(conf, this.doc, this.selection, conf.dynamicSlots.map(() => null),
+                                              (state, slot) => slot.reconfigure(state, this), null)
       startValues = intermediateState.values
     } else {
       startValues = tr.startState.values.slice()
     }
-    new EditorState(conf, tr.newDoc, tr.newSelection, startValues, tr)
+    new EditorState(conf, tr.newDoc, tr.newSelection, startValues, (state, slot) => slot.update(state, tr), tr)
   }
 
   /// Create a [transaction spec](#state.TransactionSpec) that
@@ -237,7 +238,7 @@ export class EditorState {
   /// initializing an editor—updated states are created by applying
   /// transactions.
   static create(config: EditorStateConfig = {}): EditorState {
-    let {configuration, values} = Configuration.resolve(config.extensions || [], new Map)
+    let configuration = Configuration.resolve(config.extensions || [], new Map)
     let doc = config.doc instanceof Text ? config.doc
       : Text.of((config.doc || "").split(configuration.staticFacet(EditorState.lineSeparator) || DefaultSplit))
     let selection = !config.selection ? EditorSelection.single(0)
@@ -245,7 +246,8 @@ export class EditorState {
       : EditorSelection.single(config.selection.anchor, config.selection.head)
     checkSelection(selection, doc.length)
     if (!configuration.staticFacet(allowMultipleSelections)) selection = selection.asSingle()
-    return new EditorState(configuration, doc, selection, values)
+    return new EditorState(configuration, doc, selection, configuration.dynamicSlots.map(() => null),
+                           (state, slot) => slot.create(state), null)
   }
 
   /// A facet that, when enabled, causes the editor to allow multiple

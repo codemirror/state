@@ -119,10 +119,10 @@ class FacetProvider<Input> {
               readonly type: Provider,
               readonly value: ((state: EditorState) => Input) | ((state: EditorState) => readonly Input[]) | Input) {}
 
-  dynamicSlot(addresses: {[id: number]: number}) {
+  dynamicSlot(addresses: {[id: number]: number}): DynamicSlot {
     let getter: (state: EditorState) => any = this.value as any
     let compare = this.facet.compareInput
-    let idx = addresses[this.id] >> 1, multi = this.type == Provider.Multi
+    let id = this.id, idx = addresses[id] >> 1, multi = this.type == Provider.Multi
     let depDoc = false, depSel = false, depAddrs: number[] = []
     for (let dep of this.dependencies) {
       if (dep == "doc") depDoc = true
@@ -130,24 +130,35 @@ class FacetProvider<Input> {
       else if (((addresses[dep.id] ?? 1) & 1) == 0) depAddrs.push(addresses[dep.id])
     }
 
-    return (state: EditorState, tr: Transaction | null) => {
-      let oldVal = state.values[idx]
-      if (oldVal === Uninitialized) {
+    return {
+      create(state) {
         state.values[idx] = getter(state)
         return SlotStatus.Changed
-      }
-      if (tr) {
-        let depChanged = (depDoc && tr.docChanged) || (depSel && (tr.docChanged || tr.selection)) || 
-          depAddrs.some(addr => (ensureAddr(state, addr) & SlotStatus.Changed) > 0)
-        if (depChanged) {
+      },
+      update(state, tr) {
+        if ((depDoc && tr.docChanged) || (depSel && (tr.docChanged || tr.selection)) || 
+            depAddrs.some(addr => (ensureAddr(state, addr) & SlotStatus.Changed) > 0)) {
           let newVal = getter(state)
-          if (multi ? !compareArray(newVal, oldVal, compare) : !compare(newVal, oldVal)) {
+          if (multi ? !compareArray(newVal, state.values[idx], compare) : !compare(newVal, state.values[idx])) {
             state.values[idx] = newVal
             return SlotStatus.Changed
           }
         }
+        return 0
+      },
+      reconfigure(state, oldState) {
+        let newVal = getter(state)
+        let oldAddr = oldState.config.address[id]
+        if (oldAddr != null) {
+          let oldVal = getAddr(oldState, oldAddr)
+          if (multi ? compareArray(newVal, oldVal, compare) : compare(newVal, oldVal)) {
+            state.values[idx] = oldVal
+            return 0
+          }
+        }
+        state.values[idx] = newVal
+        return SlotStatus.Changed
       }
-      return 0
     }
   }
 }
@@ -162,28 +173,50 @@ function dynamicFacetSlot<Input, Output>(
   addresses: {[id: number]: number},
   facet: Facet<Input, Output>,
   providers: readonly FacetProvider<Input>[]
-) {
+): DynamicSlot {
   let providerAddrs = providers.map(p => addresses[p.id])
   let providerTypes = providers.map(p => p.type)
   let dynamic = providerAddrs.filter(p => !(p & 1))
   let idx = addresses[facet.id] >> 1
 
-  return (state: EditorState, tr: Transaction | null) => {
-    let oldVal = state.values[idx], changed = oldVal === Uninitialized
-    for (let dynAddr of dynamic) {
-      if (ensureAddr(state, dynAddr) & SlotStatus.Changed) changed = true
-    }
-    if (!changed) return 0
+  function get(state: EditorState) {
     let values: Input[] = []
     for (let i = 0; i < providerAddrs.length; i++) {
       let value = getAddr(state, providerAddrs[i])
       if (providerTypes[i] == Provider.Multi) for (let val of value) values.push(val)
       else values.push(value)
     }
-    let value = facet.combine(values)
-    if (oldVal !== Uninitialized && facet.compare(value, oldVal)) return 0
-    state.values[idx] = value
-    return SlotStatus.Changed
+    return facet.combine(values)
+  }
+
+  return {
+    create(state) {
+      for (let addr of providerAddrs) ensureAddr(state, addr)
+      state.values[idx] = get(state)
+      return SlotStatus.Changed
+    },
+    update(state, tr) {
+      if (!dynamic.some(dynAddr => ensureAddr(state, dynAddr) & SlotStatus.Changed)) return 0
+      let value = get(state)
+      if (facet.compare(value, state.values[idx])) return 0
+      state.values[idx] = value
+      return SlotStatus.Changed
+    },
+    reconfigure(state, oldState) {
+      let depChanged = providerAddrs.some(addr => ensureAddr(state, addr) & SlotStatus.Changed)
+      let oldProviders = oldState.config.facets[facet.id], oldValue = oldState.facet(facet)
+      if (oldProviders && !depChanged && sameArray(providers, oldProviders)) {
+        state.values[idx] = oldValue
+        return 0
+      }
+      let value = get(state)
+      if (facet.compare(value, oldValue)) {
+        state.values[idx] = oldValue
+        return 0
+      }
+      state.values[idx] = value
+      return SlotStatus.Changed
+    }
   }
 }
 
@@ -250,22 +283,28 @@ export class StateField<Value> {
   }
 
   /// @internal
-  slot(addresses: {[id: number]: number}) {
+  slot(addresses: {[id: number]: number}): DynamicSlot {
     let idx = addresses[this.id] >> 1
-    return (state: EditorState, tr: Transaction | null) => {
-      let oldVal = state.values[idx]
-      if (oldVal === Uninitialized) {
+    return {
+      create: (state) => {
+        state.values[idx] = this.create(state)
+        return SlotStatus.Changed
+      },
+      update: (state, tr) => {
+        let oldVal = state.values[idx]
+        let value = this.updateF(oldVal, tr)
+        if (this.compareF(oldVal, value)) return 0
+        state.values[idx] = value
+        return SlotStatus.Changed
+      },
+      reconfigure: (state, oldState) => {
+        if (oldState.config.address[this.id] != null) {
+          state.values[idx] = oldState.field(this)
+          return 0
+        }
         state.values[idx] = this.create(state)
         return SlotStatus.Changed
       }
-      if (tr) {
-        let value = this.updateF(oldVal, tr)
-        if (!this.compareF(oldVal, value)) {
-          state.values[idx] = value
-          return SlotStatus.Changed
-        }
-      }
-      return 0
     }
   }
 
@@ -370,7 +409,11 @@ export class CompartmentInstance {
   extension!: Extension
 }
 
-type DynamicSlot = (state: EditorState, tr: Transaction | null) => number
+export interface DynamicSlot {
+  create(state: EditorState): SlotStatus
+  update(state: EditorState, tr: Transaction): SlotStatus
+  reconfigure(state: EditorState, oldState: EditorState): SlotStatus
+}
 
 export class Configuration {
   readonly statusTemplate: SlotStatus[] = []
@@ -403,61 +446,41 @@ export class Configuration {
     let address: {[id: number]: number} = Object.create(null)
     let staticValues: any[] = []
     let dynamicSlots: ((address: {[id: number]: number}) => DynamicSlot)[] = []
-    let dynamicValues: any[] = []
 
     for (let field of fields) {
       address[field.id] = dynamicSlots.length << 1
       dynamicSlots.push(a => field.slot(a))
-      dynamicValues.push(oldState && oldState.config.address[field.id] != null ? oldState.field(field) : Uninitialized)
-    }
-
-    let canReuseCache: Map<Facet<any>, boolean> = new Map
-    let canReuseDep = (dep: Slot<any>) => {
-      if (!(dep instanceof Facet)) return true
-      let cached = canReuseCache.get(dep)
-      if (cached != null) return cached
-      canReuseCache.set(dep, false)
-      if (!oldFacets || !sameArray(oldFacets[dep.id] || [], facets[dep.id] || [])) return
-      for (let input of facets[dep.id] || [])
-        if (!input.dependencies.every(canReuseDep)) return
-      canReuseCache.set(dep, true)
     }
 
     let oldFacets = oldState?.config.facets
     for (let id in facets) {
       let providers = facets[id], facet = providers[0].facet
       let oldProviders = oldFacets && oldFacets[id] || []
-      let canReuse = sameArray(providers, oldProviders)
       if (providers.every(p => p.type == Provider.Static)) {
         address[facet.id] = (staticValues.length << 1) | 1
-        let value = canReuse ? oldState!.facet(facet) : facet.combine(providers.map(p => p.value)), oldValue
-        if (!canReuse && oldState && facet.compare(value, oldValue = oldState.facet(facet))) value = oldValue
-        staticValues.push(value)
+        if (sameArray(oldProviders, providers)) {
+          staticValues.push(oldState!.facet(facet))
+        } else {
+          let value = facet.combine(providers.map(p => p.value))
+          staticValues.push(oldState && facet.compare(value, oldState.facet(facet)) ? oldState.facet(facet) : value)
+        }
       } else {
         for (let p of providers) {
-          let canReuseThis =  p.dependencies.every(canReuseDep)
-          if (!canReuseThis) canReuse = false
           if (p.type == Provider.Static) {
             address[p.id] = (staticValues.length << 1) | 1
             staticValues.push(p.value)
           } else {
             address[p.id] = dynamicSlots.length << 1
             dynamicSlots.push(a => p.dynamicSlot(a))
-            let oldAddr = oldState && canReuseThis ? oldState.config.address[p.id] : null
-            dynamicValues.push(oldAddr != null ? getAddr(oldState!, oldAddr) : Uninitialized)
           }
         }
         address[facet.id] = dynamicSlots.length << 1
         dynamicSlots.push(a => dynamicFacetSlot(a, facet, providers))
-        dynamicValues.push(canReuse || oldProviders.length ? oldState!.facet(facet) : Uninitialized)
       }
     }
 
     let dynamic = dynamicSlots.map(f => f(address))
-    return {
-      configuration: new Configuration(base, newCompartments, dynamic, address, staticValues, facets),
-      values: dynamicValues
-    }
+    return new Configuration(base, newCompartments, dynamic, address, staticValues, facets)
   }
 }
 
@@ -506,8 +529,6 @@ export const enum SlotStatus {
   Computing = 4
 }
 
-export const Uninitialized: any = {}
-
 export function ensureAddr(state: EditorState, addr: number) {
   if (addr & 1) return SlotStatus.Computed
   let idx = addr >> 1
@@ -515,7 +536,7 @@ export function ensureAddr(state: EditorState, addr: number) {
   if (status == SlotStatus.Computing) throw new Error("Cyclic dependency between fields and/or facets")
   if (status & SlotStatus.Computed) return status
   state.status[idx] = SlotStatus.Computing
-  let changed = state.config.dynamicSlots[idx](state, state.applying)
+  let changed = state.computeSlot!(state, state.config.dynamicSlots[idx])
   return state.status[idx] = SlotStatus.Computed | changed
 }
 
