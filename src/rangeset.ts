@@ -224,7 +224,7 @@ export class RangeSet<T extends RangeValue> {
     let {add = [], sort = false, filterFrom = 0, filterTo = this.length} = updateSpec
     let filter = updateSpec.filter as undefined | ((from: number, to: number, value: T) => boolean)
     if (add.length == 0 && !filter) return this
-    if (sort) add.slice().sort(cmpRange)
+    if (sort) add = add.slice().sort(cmpRange)
     if (this.isEmpty) return add.length ? RangeSet.of(add) : this
 
     let cur = new LayerCursor(this, null, -1).goto(0), i = 0, spill: Range<T>[] = []
