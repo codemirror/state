@@ -1,6 +1,6 @@
 {
   "name": "@codemirror/state",
-  "version": "0.19.7",
+  "version": "0.19.8",
   "description": "Editor state data structures for the CodeMirror code editor",
   "scripts": {
     "test": "cm-runtests",

@@ -1,3 +1,9 @@
+## 0.19.8 (2022-02-15)
+
+### Bug fixes
+
+Fix a bug where facet values with computed inputs could incorrectly retain their old value on reconfiguration.
+
 ## 0.19.7 (2022-02-11)
 
 ### Bug fixes
