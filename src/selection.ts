@@ -68,7 +68,13 @@ export class SelectionRange {
   /// Map this range through a change, producing a valid range in the
   /// updated document.
   map(change: ChangeDesc, assoc = -1): SelectionRange {
-    let from = change.mapPos(this.from, assoc), to = change.mapPos(this.to, assoc)
+    let from, to
+    if (this.empty) {
+      from = to = change.mapPos(this.from, assoc)
+    } else {
+      from = change.mapPos(this.from, 1)
+      to = change.mapPos(this.to, -1)
+    }
     return from == this.from && to == this.to ? this : new SelectionRange(from, to, this.flags)
   }
 
