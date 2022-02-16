@@ -1,3 +1,9 @@
+## 0.19.9 (2022-02-16)
+
+### Bug fixes
+
+Mapping a non-empty selection range now always puts any newly inserted text on the sides of the range outside of the mapped version.
+
 ## 0.19.8 (2022-02-15)
 
 ### Bug fixes
