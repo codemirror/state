@@ -253,7 +253,7 @@ export class RangeSet<T extends RangeValue> {
 
   /// Map this range set through a set of changes, return the new set.
   map(changes: ChangeDesc): RangeSet<T> {
-    if (changes.length == 0 || this.isEmpty) return this
+    if (changes.empty || this.isEmpty) return this
 
     let chunks = [], chunkPos = [], maxPoint = -1
     for (let i = 0; i < this.chunk.length; i++) {
