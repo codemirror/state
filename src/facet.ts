@@ -490,7 +490,7 @@ function flatten(extension: Extension, compartments: Map<Compartment, Extension>
   function inner(ext: Extension, prec: number) {
     let known = seen.get(ext)
     if (known != null) {
-      if (known >= prec) return
+      if (known <= prec) return
       let found = result[known].indexOf(ext as any)
       if (found > -1) result[known].splice(found, 1)
       if (ext instanceof CompartmentInstance) newCompartments.delete(ext.compartment)
