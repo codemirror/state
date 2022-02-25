@@ -588,7 +588,8 @@ class LayerCursor<T extends RangeValue> {
   }
 
   compare(other: LayerCursor<T>) {
-    return this.from - other.from || this.startSide - other.startSide || this.to - other.to || this.endSide - other.endSide
+    return this.from - other.from || this.startSide - other.startSide || this.rank - other.rank ||
+      this.to - other.to || this.endSide - other.endSide
   }
 }
 
