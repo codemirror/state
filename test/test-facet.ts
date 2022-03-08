@@ -175,4 +175,11 @@ describe("EditorState facets", () => {
     ist(st.facet(num).join(","), "2")
     ist(st.facet(num), st.update({effects: StateEffect.appendConfig.of(bool.of(false))}).state.facet(num))
   })
+
+  it("preserves dynamic facet values when dependencies stay the same", () => {
+    let f = Facet.define<{a: number}>()
+    let st1 = mk(f.compute([], state => ({a: 1})), str.of("A"))
+    let st2 = st1.update({effects: StateEffect.appendConfig.of(bool.of(true))}).state
+    ist(st1.facet(f), st2.facet(f))
+  })
 })

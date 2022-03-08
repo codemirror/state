@@ -146,12 +146,15 @@ class FacetProvider<Input> {
         }
         return 0
       },
-      reconfigure(state, oldState) {
+      reconfigure: (state, oldState) => {
         let newVal = getter(state)
         let oldAddr = oldState.config.address[id]
         if (oldAddr != null) {
           let oldVal = getAddr(oldState, oldAddr)
-          if (multi ? compareArray(newVal, oldVal, compare) : compare(newVal, oldVal)) {
+          if (this.dependencies.every(dep => {
+            return dep instanceof Facet ? oldState.facet(dep) === state.facet(dep) :
+              dep instanceof StateField ? oldState.field(dep, false) == state.field(dep, false) : true
+          }) || (multi ? compareArray(newVal, oldVal, compare) : compare(newVal, oldVal))) {
             state.values[idx] = oldVal
             return 0
           }
