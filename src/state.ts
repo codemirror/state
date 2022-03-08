@@ -303,7 +303,12 @@ export class EditorState {
   /// [`phrase`](#state.EditorState.phrase) method will look through
   /// all objects registered with this facet to find translations for
   /// its argument.
-  static phrases = Facet.define<{[key: string]: string}>()
+  static phrases = Facet.define<{[key: string]: string}>({
+    compare(a, b) {
+      let kA = Object.keys(a), kB = Object.keys(b)
+      return kA.length == kB.length && kA.every(k => a[k as any] == b[k as any])
+    }
+  })
 
   /// Look up a translation for the given phrase (via the
   /// [`phrases`](#state.EditorState^phrases) facet), or return the
