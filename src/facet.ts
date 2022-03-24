@@ -362,16 +362,7 @@ export const Prec = {
   high: prec(Prec_.high),
   /// The highest precedence level, for extensions that should end up
   /// near the start of the precedence ordering.
-  highest: prec(Prec_.highest),
-
-  // FIXME Drop these in some future breaking version
-
-  /// Backwards-compatible synonym for `Prec.lowest`.
-  fallback: prec(Prec_.lowest),
-  /// Backwards-compatible synonym for `Prec.high`.
-  extend: prec(Prec_.high),
-  /// Backwards-compatible synonym for `Prec.highest`.
-  override: prec(Prec_.highest)
+  highest: prec(Prec_.highest)
 }
 
 class PrecExtension {
