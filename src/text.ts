@@ -27,7 +27,7 @@ export interface TextIterator extends Iterator<string>, Iterable<string> {
   lineBreak: boolean
 }
 
-/// The data structure for documents.
+/// The data structure for documents. @nonabstract
 export abstract class Text implements Iterable<string> {
   /// The length of the string.
   abstract readonly length: number
@@ -98,8 +98,7 @@ export abstract class Text implements Iterable<string> {
 
   /// Iterate over the text. When `dir` is `-1`, iteration happens
   /// from end to start. This will return lines and the breaks between
-  /// them as separate strings, and for long lines, might split lines
-  /// themselves into multiple chunks as well.
+  /// them as separate strings.
   iter(dir: 1 | -1 = 1): TextIterator { return new RawTextCursor(this, dir) }
 
   /// Iterate over a range of the text. When `from` > `to`, the
