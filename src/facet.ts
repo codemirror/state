@@ -94,7 +94,7 @@ export class Facet<Input, Output = readonly Input[]> {
   /// field as input. If the field's type corresponds to this facet's
   /// input type, the getter function can be omitted. If given, it
   /// will be used to retrieve the input from the field value.
-  from(field: StateField<Input>): Extension
+  from<T extends Input>(field: StateField<T>): Extension
   from<T>(field: StateField<T>, get: (value: T) => Input): Extension
   from<T>(field: StateField<T>, get?: (value: T) => Input): Extension {
     if (!get) get = x => x as any
