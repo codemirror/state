@@ -3,8 +3,11 @@ import {ChangeDesc, MapMode} from "@codemirror/state"
 /// Each range is associated with a value, which must inherit from
 /// this class.
 export abstract class RangeValue {
-  /// Compare this value with another value. The default
-  /// implementation compares by identity.
+  /// Compare this value with another value. Used when comparing
+  /// rangesets. The default implementation compares by identity.
+  /// Unless you are only creating a fixed number of unique instances
+  /// of your value type, it is a good idea to implement this
+  /// properly.
   eq(other: RangeValue) { return this == other }
   /// The bias value at the start of the range. Determines how the
   /// range is positioned relative to other ranges starting at this
@@ -17,8 +20,11 @@ export abstract class RangeValue {
   /// when its `from` and `to` are the same, to decide whether a
   /// change deletes the range. Defaults to `MapMode.TrackDel`.
   mapMode!: MapMode
-  /// Whether this value marks a point range, which is treated as
-  /// atomic and shadows the ranges contained in it.
+  /// Determines whether this value marks a point range. Regular
+  /// ranges affect the part of the document they cover, and are
+  /// meaningless when empty. Point ranges have a meaning on their
+  /// own. When non-empty, a point range is treated as atomic and
+  /// shadows any ranges contained in it.
   point!: boolean
 
   /// Create a [range](#rangeset.Range) with this value.
@@ -47,11 +53,12 @@ function cmpRange<T extends RangeValue>(a: Range<T>, b: Range<T>) {
 
 /// Collection of methods used when comparing range sets.
 export interface RangeComparator<T extends RangeValue> {
-  /// Notifies the comparator that the given range has the given set
-  /// of values associated with it.
+  /// Notifies the comparator that a range (in positions in the new
+  /// document) has the given sets of values associated with it, which
+  /// are different in the old (A) and new (B) sets.
   compareRange(from: number, to: number, activeA: T[], activeB: T[]): void
-  /// Notification for a point range.
-  comparePoint(from: number, to: number, byA: T | null, byB: T | null): void
+  /// Notification for a changed (or inserted, or deleted) point range.
+  comparePoint(from: number, to: number, pointA: T | null, pointB: T | null): void
 }
 
 /// Methods used when iterating over the spans created by a set of
@@ -213,7 +220,7 @@ export class RangeSet<T extends RangeValue> {
   /// Update the range set, optionally adding new ranges or filtering
   /// out existing ones.
   ///
-  /// (The extra type parameter is just there as a kludge to work
+  /// (Note: The type parameter is just there as a kludge to work
   /// around TypeScript variance issues that prevented `RangeSet<X>`
   /// from being a subtype of `RangeSet<Y>` when `X` is a subtype of
   /// `Y`.)
