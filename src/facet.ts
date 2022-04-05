@@ -6,9 +6,9 @@ let nextID = 0
 type FacetConfig<Input, Output> = {
   /// How to combine the input values into a single output value. When
   /// not given, the array of input values becomes the output. This
-  /// will immediately be called on creating the facet, with an empty
-  /// array, to compute the facet's default value when no inputs are
-  /// present.
+  /// function will immediately be called on creating the facet, with
+  /// an empty array, to compute the facet's default value when no
+  /// inputs are present.
   combine?: (value: readonly Input[]) => Output,
   /// How to compare output values to determine whether the value of
   /// the facet changed. Defaults to comparing by `===` or, if no
@@ -18,7 +18,7 @@ type FacetConfig<Input, Output> = {
   /// How to compare input values to avoid recomputing the output
   /// value when no inputs changed. Defaults to comparing with `===`.
   compareInput?: (a: Input, b: Input) => boolean,
-  /// Static facets can not contain dynamic inputs.
+  /// Forbids dynamic inputs to this facet.
   static?: boolean,
   /// If given, these extension(s) will be added to any state where
   /// this facet is provided. (Note that, while a facet's default
@@ -32,10 +32,10 @@ type FacetConfig<Input, Output> = {
 /// state. It takes inputs from any number of extensions, and combines
 /// those into a single output value.
 ///
-/// Examples of facets are the [theme](#view.EditorView^theme) styles
-/// associated with an editor or the [tab
-/// size](#state.EditorState^tabSize) (which is reduced to a single
-/// value, using the input with the hightest precedence).
+/// Examples of uses of facets are the [tab
+/// size](#state.EditorState^tabSize), [editor
+/// attributes](#view.EditorView.editorAttributes), and [update
+/// listeners](#view.EditorView^updateListener).
 export class Facet<Input, Output = readonly Input[]> {
   /// @internal
   readonly id = nextID++
@@ -65,7 +65,7 @@ export class Facet<Input, Output = readonly Input[]> {
                                     config.enables)
   }
 
-  /// Returns an extension that adds the given value for this facet.
+  /// Returns an extension that adds the given value to this facet.
   of(value: Input): Extension {
     return new FacetProvider<Input>([], this, Provider.Static, value)
   }
@@ -75,9 +75,8 @@ export class Facet<Input, Output = readonly Input[]> {
   /// this value depends on, since your function is only called again
   /// for a new state when one of those parts changed.
   ///
-  /// In most cases, you'll want to use the
-  /// [`provide`](#state.StateField^define^config.provide) option when
-  /// defining a field instead.
+  /// In cases where your value depends only on a single field, you'll
+  /// want to use the [`from`](#state.Facet.from) method instead.
   compute(deps: readonly Slot<any>[], get: (state: EditorState) => Input): Extension {
     if (this.isStatic) throw new Error("Can't compute a static facet")
     return new FacetProvider<Input>(deps, this, Provider.Single, get)
@@ -237,12 +236,12 @@ type StateFieldSpec<Value> = {
   /// `===`.
   compare?: (a: Value, b: Value) => boolean,
 
-  /// Provide values for facets based on the value of this field. The
-  /// given function will be called once with the initialized field. It
-  /// will usually want to call some facet's
-  /// [`from`](#state.Facet.from) method to create facet inputs from
-  /// this field, but can also return other extensions that should be
-  /// enabled by this field.
+  /// Provide extensions based on this field. The given function will
+  /// be called once with the initialized field. It will usually want
+  /// to call some facet's [`from`](#state.Facet.from) method to
+  /// create facet inputs from this field, but can also return other
+  /// extensions that should be enabled when the field is present in a
+  /// configuration.
   provide?: (field: StateField<Value>) => Extension
 
   /// A function used to serialize this field's content to JSON. Only
@@ -349,20 +348,20 @@ function prec(value: number) {
 /// final ordering of extensions is determined by first sorting by
 /// precedence and then by order within each precedence.
 export const Prec = {
-  /// The lowest precedence level. Meant for things that should end up
-  /// near the end of the extension order.
-  lowest: prec(Prec_.lowest),
-  /// A lower-than-default precedence, for extensions.
-  low: prec(Prec_.low),
-  /// The default precedence, which is also used for extensions
-  /// without an explicit precedence.
-  default: prec(Prec_.default),
+  /// The highest precedence level, for extensions that should end up
+  /// near the start of the precedence ordering.
+  highest: prec(Prec_.highest),
   /// A higher-than-default precedence, for extensions that should
   /// come before those with default precedence.
   high: prec(Prec_.high),
-  /// The highest precedence level, for extensions that should end up
-  /// near the start of the precedence ordering.
-  highest: prec(Prec_.highest)
+  /// The default precedence, which is also used for extensions
+  /// without an explicit precedence.
+  default: prec(Prec_.default),
+  /// A lower-than-default precedence.
+  low: prec(Prec_.low),
+  /// The lowest precedence level. Meant for things that should end up
+  /// near the end of the extension order.
+  lowest: prec(Prec_.lowest)
 }
 
 class PrecExtension {

@@ -129,7 +129,7 @@ export interface TransactionSpec {
   effects?: StateEffect<any> | readonly StateEffect<any>[],
   /// Set [annotations](#state.Annotation) for this transaction.
   annotations?: Annotation<any> | readonly Annotation<any>[],
-  /// Shorthand for `annotations: `[`Transaction.userEvent`](#state.Transaction^userEvent)[`.of(...)`.
+  /// Shorthand for `annotations:` [`Transaction.userEvent`](#state.Transaction^userEvent)`.of(...)`.
   userEvent?: string,
   /// When set to `true`, the transaction is marked as needing to
   /// scroll the current selection into view.
@@ -137,7 +137,9 @@ export interface TransactionSpec {
   /// By default, transactions can be modified by [change
   /// filters](#state.EditorState^changeFilter) and [transaction
   /// filters](#state.EditorState^transactionFilter). You can set this
-  /// to `false` to disable that.
+  /// to `false` to disable that. This can be necessary for
+  /// transactions that, for example, include annotations that must be
+  /// kept consistent with their changes.
   filter?: boolean,
   /// Normally, when multiple specs are combined (for example by
   /// [`EditorState.update`](#state.EditorState.update)), the
@@ -152,7 +154,9 @@ export interface TransactionSpec {
 /// Typically, a user action creates a single transaction, which may
 /// contain any number of document changes, may change the selection,
 /// or have other effects. Create a transaction by calling
-/// [`EditorState.update`](#state.EditorState.update).
+/// [`EditorState.update`](#state.EditorState.update), or immediately
+/// dispatch one by calling
+/// [`EditorView.dispatch`](#view.EditorView.dispatch).
 export class Transaction {
   /// @internal
   _doc: Text | null = null
@@ -200,7 +204,7 @@ export class Transaction {
   }
 
   /// The new state created by the transaction. Computed on demand
-  /// (but retained for subsequent access), so itis recommended not to
+  /// (but retained for subsequent access), so it is recommended not to
   /// access it in [transaction
   /// filters](#state.EditorState^transactionFilter) when possible.
   get state() {
@@ -233,7 +237,8 @@ export class Transaction {
     return !!(e && (e == event || e.length > event.length && e.slice(0, event.length) == event && e[event.length] == "."))
   }
 
-  /// Annotation used to store transaction timestamps.
+  /// Annotation used to store transaction timestamps. Automatically
+  /// added to every transaction, holding `Date.now()`.
   static time = Annotation.define<number>()
 
   /// Annotation used to associate a transaction with a user interface

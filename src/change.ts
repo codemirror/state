@@ -50,7 +50,9 @@ export class ChangeDesc {
   /// False when there are actual changes in this set.
   get empty() { return this.sections.length == 0 || this.sections.length == 2 && this.sections[1] < 0 }
 
-  /// Iterate over the unchanged parts left by these changes.
+  /// Iterate over the unchanged parts left by these changes. `posA`
+  /// provides the position of the range in the old document, `posB`
+  /// the new position in the changed document.
   iterGaps(f: (posA: number, posB: number, length: number) => void) {
     for (let i = 0, posA = 0, posB = 0; i < this.sections.length;) {
       let len = this.sections[i++], ins = this.sections[i++]
@@ -67,6 +69,9 @@ export class ChangeDesc {
   /// Iterate over the ranges changed by these changes. (See
   /// [`ChangeSet.iterChanges`](#state.ChangeSet.iterChanges) for a
   /// variant that also provides you with the inserted text.)
+  /// `fromA`/`toA` provides the extent of the change in the starting
+  /// document, `fromB`/`toB` the extent of the replacement in the
+  /// changed document.
   ///
   /// When `individual` is true, adjacent changes (which are kept
   /// separate for [position mapping](#state.ChangeDesc.mapPos)) are

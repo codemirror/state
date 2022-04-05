@@ -35,9 +35,9 @@ console.log(transaction.state.doc.toString()) // "hello editor"
 
 @TransactionSpec
 
-@Transaction
-
 @ChangeSpec
+
+@Transaction
 
 @ChangeDesc
 

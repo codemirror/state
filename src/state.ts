@@ -125,7 +125,7 @@ export class EditorState {
 
   /// Create a [transaction spec](#state.TransactionSpec) that
   /// replaces every selection range with the given content.
-  replaceSelection(text: string | Text) {
+  replaceSelection(text: string | Text): TransactionSpec {
     if (typeof text == "string") text = this.toText(text)
     return this.changeByRange(range => ({changes: {from: range.from, to: range.to, insert: text},
                                          range: EditorSelection.cursor(range.from + text.length)}))
@@ -379,7 +379,7 @@ export class EditorState {
   /// want to do anything, `false` to completely stop the changes in
   /// the transaction, or a set of ranges in which changes should be
   /// suppressed. Such ranges are represented as an array of numbers,
-  /// with each pair of two number indicating the start and end of a
+  /// with each pair of two numbers indicating the start and end of a
   /// range. So for example `[10, 20, 100, 110]` suppresses changes
   /// between 10 and 20, and between 100 and 110.
   static changeFilter = changeFilter
@@ -408,12 +408,12 @@ export class EditorState {
   /// which can only add
   /// [annotations](#state.TransactionSpec.annotations) and
   /// [effects](#state.TransactionSpec.effects). _But_, this type
-  /// of filter runs even the transaction has disabled regular
+  /// of filter runs even if the transaction has disabled regular
   /// [filtering](#state.TransactionSpec.filter), making it suitable
   /// for effects that don't need to touch the changes or selection,
   /// but do want to process every transaction.
   ///
-  /// Extenders run _after_ filters, when both are applied.
+  /// Extenders run _after_ filters, when both are present.
   static transactionExtender = transactionExtender
 }
 
