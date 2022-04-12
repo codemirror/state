@@ -1,4 +1,5 @@
-import {Text, findClusterBreak} from "@codemirror/text"
+import {Text} from "./text"
+import {findClusterBreak} from "./char"
 import {ChangeSet, ChangeSpec, DefaultSplit} from "./change"
 import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"

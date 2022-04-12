@@ -1,4 +1,4 @@
-import {Text} from "@codemirror/text"
+import {Text} from "./text"
 
 export const DefaultSplit = /\r\n?|\n/
 
