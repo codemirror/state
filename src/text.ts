@@ -10,7 +10,7 @@ const enum Tree {
 const enum Open { From = 1, To = 2 }
 
 /// A text iterator iterates over a sequence of strings. When
-/// iterating over a [`Text`](#text.Text) document, result values will
+/// iterating over a [`Text`](#state.Text) document, result values will
 /// either be lines or line breaks.
 export interface TextIterator extends Iterator<string>, Iterable<string> {
   /// Retrieve the next string. Optionally skip a given number of
@@ -129,7 +129,7 @@ export abstract class Text implements Iterable<string> {
   toString() { return this.sliceString(0) }
 
   /// Convert the document to an array of lines (which can be
-  /// deserialized again via [`Text.of`](#text.Text^of)).
+  /// deserialized again via [`Text.of`](#state.Text^of)).
   toJSON() {
     let lines: string[] = []
     this.flatten(lines)
@@ -547,7 +547,7 @@ if (typeof Symbol != "undefined") {
 }
 
 /// This type describes a line in the document. It is created
-/// on-demand when lines are [queried](#text.Text.lineAt).
+/// on-demand when lines are [queried](#state.Text.lineAt).
 export class Line {
   /// @internal
   constructor(

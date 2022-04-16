@@ -27,7 +27,7 @@ export abstract class RangeValue {
   /// shadows any ranges contained in it.
   point!: boolean
 
-  /// Create a [range](#rangeset.Range) with this value.
+  /// Create a [range](#state.Range) with this value.
   range(from: number, to = from) { return new Range(from, to, this) }
 }
 
@@ -164,7 +164,7 @@ export interface RangeCursor<T> {
 type RangeSetUpdate<T extends RangeValue> = {
   /// An array of ranges to add. If given, this should be sorted by
   /// `from` position and `startSide` unless
-  /// [`sort`](#rangeset.RangeSet.update^updateSpec.sort) is given as
+  /// [`sort`](#state.RangeSet.update^updateSpec.sort) is given as
   /// `true`.
   add?: readonly Range<T>[]
   /// Indicates whether the library should sort the ranges in `add`.
@@ -181,9 +181,9 @@ type RangeSetUpdate<T extends RangeValue> = {
   filterTo?: number
 }
 
-/// A range set stores a collection of [ranges](#rangeset.Range) in a
-/// way that makes them efficient to [map](#rangeset.RangeSet.map) and
-/// [update](#rangeset.RangeSet.update). This is an immutable data
+/// A range set stores a collection of [ranges](#state.Range) in a
+/// way that makes them efficient to [map](#state.RangeSet.map) and
+/// [update](#state.RangeSet.update). This is an immutable data
 /// structure.
 export class RangeSet<T extends RangeValue> {
   /// @internal
@@ -359,7 +359,7 @@ export class RangeSet<T extends RangeValue> {
   /// Iterate over a group of range sets at the same time, notifying
   /// the iterator about the ranges covering every given piece of
   /// content. Returns the open count (see
-  /// [`SpanIterator.span`](#rangeset.SpanIterator.span)) at the end
+  /// [`SpanIterator.span`](#state.SpanIterator.span)) at the end
   /// of the iteration.
   static spans<T extends RangeValue>(
     sets: readonly RangeSet<T>[], from: number, to: number,
@@ -415,8 +415,8 @@ function lazySort<T extends RangeValue>(ranges: readonly Range<T>[]): readonly R
 ;(RangeSet.empty as any).nextLayer = RangeSet.empty
 
 /// A range set builder is a data structure that helps build up a
-/// [range set](#rangeset.RangeSet) directly, without first allocating
-/// an array of [`Range`](#rangeset.Range) objects.
+/// [range set](#state.RangeSet) directly, without first allocating
+/// an array of [`Range`](#state.Range) objects.
 export class RangeSetBuilder<T extends RangeValue> {
   private chunks: Chunk<T>[] = []
   private chunkPos: number[] = []

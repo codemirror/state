@@ -34,7 +34,7 @@ type FacetConfig<Input, Output> = {
 ///
 /// Examples of uses of facets are the [tab
 /// size](#state.EditorState^tabSize), [editor
-/// attributes](#view.EditorView.editorAttributes), and [update
+/// attributes](#view.EditorView^editorAttributes), and [update
 /// listeners](#view.EditorView^updateListener).
 export class Facet<Input, Output = readonly Input[]> {
   /// @internal

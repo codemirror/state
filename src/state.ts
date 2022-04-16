@@ -15,7 +15,7 @@ export interface EditorStateConfig {
   /// provided either as a plain string (which will be split into
   /// lines according to the value of the [`lineSeparator`
   /// facet](#state.EditorState^lineSeparator)), or an instance of
-  /// the [`Text`](#text.Text) class (which is what the state will use
+  /// the [`Text`](#state.Text) class (which is what the state will use
   /// to represent the document).
   doc?: string | Text
   /// The starting selection. Defaults to a cursor at the very start
@@ -180,7 +180,7 @@ export class EditorState {
 
   /// Using the state's [line
   /// separator](#state.EditorState^lineSeparator), create a
-  /// [`Text`](#text.Text) instance from the given string.
+  /// [`Text`](#state.Text) instance from the given string.
   toText(string: string): Text {
     return Text.of(string.split(this.facet(EditorState.lineSeparator) || DefaultSplit))
   }
@@ -338,7 +338,7 @@ export class EditorState {
   }
 
   /// Return a function that can categorize strings (expected to
-  /// represent a single [grapheme cluster](#text.findClusterBreak))
+  /// represent a single [grapheme cluster](#state.findClusterBreak))
   /// into one of:
   ///
   ///  - Word (contains an alphanumeric character or a character

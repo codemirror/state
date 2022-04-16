@@ -2,7 +2,7 @@ In its most basic form, the editor state is made up of a current <a
 href="#state.EditorState.doc">document</a> and a <a
 href="#state.EditorState.selection">selection</a>. Because there are a
 lot of extra pieces that an editor might need to keep in its state
-(such as an [undo history](#history) or [syntax
+(such as an [undo history](#commands.history) or [syntax
 tree](#language.syntaxTree)), it is possible for extensions to add
 additional [fields](#state.StateField) to the state object.
 
@@ -111,11 +111,11 @@ extensions for the editor state.
 ### Range Sets
 
 Range sets provide a data structure that can hold a collection of
-tagged, possibly overlapping [ranges](#rangeset.Range) in such a way
-that they can efficiently be [mapped](#rangeset.RangeSet.map) though
+tagged, possibly overlapping [ranges](#state.Range) in such a way
+that they can efficiently be [mapped](#state.RangeSet.map) though
 document changes. They are used for storing things like
 [decorations](#view.Decoration) or [gutter
-markers](#gutter.GutterMarker).
+markers](#view.GutterMarker).
 
 @RangeValue
 
