@@ -135,8 +135,7 @@ class FacetProvider<Input> {
         return SlotStatus.Changed
       },
       update(state, tr) {
-        if ((depDoc && tr.docChanged) || (depSel && (tr.docChanged || tr.selection)) || 
-            depAddrs.some(addr => (ensureAddr(state, addr) & SlotStatus.Changed) > 0)) {
+        if ((depDoc && tr.docChanged) || (depSel && (tr.docChanged || tr.selection)) || ensureAll(state, depAddrs)) {
           let newVal = getter(state)
           if (multi ? !compareArray(newVal, state.values[idx], compare) : !compare(newVal, state.values[idx])) {
             state.values[idx] = newVal
@@ -171,6 +170,13 @@ function compareArray<T>(a: readonly T[], b: readonly T[], compare: (a: T, b: T)
   return true
 }
 
+function ensureAll(state: EditorState, addrs: readonly number[]) {
+  let changed = false
+  for (let addr of addrs)
+    if (ensureAddr(state, addr) & SlotStatus.Changed) changed = true
+  return changed
+}
+
 function dynamicFacetSlot<Input, Output>(
   addresses: {[id: number]: number},
   facet: Facet<Input, Output>,
@@ -198,14 +204,14 @@ function dynamicFacetSlot<Input, Output>(
       return SlotStatus.Changed
     },
     update(state, tr) {
-      if (!dynamic.some(dynAddr => ensureAddr(state, dynAddr) & SlotStatus.Changed)) return 0
+      if (!ensureAll(state, dynamic)) return 0
       let value = get(state)
       if (facet.compare(value, state.values[idx])) return 0
       state.values[idx] = value
       return SlotStatus.Changed
     },
     reconfigure(state, oldState) {
-      let depChanged = providerAddrs.some(addr => ensureAddr(state, addr) & SlotStatus.Changed)
+      let depChanged = ensureAll(state, providerAddrs)
       let oldProviders = oldState.config.facets[facet.id], oldValue = oldState.facet(facet)
       if (oldProviders && !depChanged && sameArray(providers, oldProviders)) {
         state.values[idx] = oldValue
