@@ -1,3 +1,23 @@
+## 0.20.0 (2022-04-20)
+
+### Breaking changes
+
+The deprecated precedence names `fallback`, `extend`, and `override` were removed from the library.
+
+### Bug fixes
+
+Fix a bug where, if an extension value occurs multiple times, its lowest, rather than highest precedence is used.
+
+Fix an issue where facets with computed inputs would unneccesarily have their outputs recreated on state reconfiguration.
+
+Fix a bug in the order in which new values for state fields and facets were computed, which could cause dynamic facets to hold the wrong value in some situations.
+
+### New features
+
+The exports from @codemirror/rangeset now live in this package.
+
+The exports from @codemirror/text now live in this package.
+
 ## 0.19.9 (2022-02-16)
 
 ### Bug fixes
