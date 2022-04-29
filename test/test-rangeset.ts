@@ -30,7 +30,7 @@ function cmp(a: Range<Value>, b: Range<Value>) { return a.from - b.from }
 function mk(from: number, to?: any, spec?: any): Range<Value> {
   if (typeof to != "number") { spec = to; to = from }
   if (typeof spec == "string") spec = {name: spec}
-  return new Range(from, to, new Value(spec, from == to))
+  return new Value(spec, from == to).range(from, to)
 }
 function mkSet(ranges: Range<Value>[]) { return RangeSet.of<Value>(ranges) }
 

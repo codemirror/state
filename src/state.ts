@@ -38,8 +38,7 @@ export class EditorState {
   /// @internal
   computeSlot: null | ((state: EditorState, slot: DynamicSlot) => SlotStatus)
 
-  /// @internal
-  constructor(
+  private constructor(
     /// @internal
     readonly config: Configuration,
     /// The current document.

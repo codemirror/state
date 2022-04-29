@@ -23,8 +23,7 @@ const enum RangeFlag {
 /// is enabled, a [selection](#state.EditorSelection) may hold
 /// multiple ranges. By default, selections hold exactly one range.
 export class SelectionRange {
-  /// @internal
-  constructor(
+  private constructor(
     /// The lower boundary of the range.
     readonly from: number,
     /// The upper boundary of the range.
@@ -100,18 +99,22 @@ export class SelectionRange {
       throw new RangeError("Invalid JSON representation for SelectionRange")
     return EditorSelection.range(json.anchor, json.head)
   }
+
+  /// @internal
+  static create(from: number, to: number, flags: number) {
+    return new SelectionRange(from, to, flags)
+  }
 }
 
 /// An editor selection holds one or more selection ranges.
 export class EditorSelection {
-  /// @internal
-  constructor(
+  private constructor(
     /// The ranges in the selection, sorted by position. Ranges cannot
     /// overlap (but they may touch, if they aren't empty).
     readonly ranges: readonly SelectionRange[],
     /// The index of the _main_ range in the selection (which is
     /// usually the range that was added last).
-    readonly mainIndex: number = 0
+    readonly mainIndex: number
   ) {}
 
   /// Map a selection through a change. Used to adjust the selection
@@ -138,7 +141,7 @@ export class EditorSelection {
   /// Make sure the selection only has one range. Returns a selection
   /// holding only the main range from this selection.
   asSingle() {
-    return this.ranges.length == 1 ? this : new EditorSelection([this.main])
+    return this.ranges.length == 1 ? this : new EditorSelection([this.main], 0)
   }
 
   /// Extend this selection with an extra range.
@@ -178,7 +181,7 @@ export class EditorSelection {
     if (ranges.length == 0) throw new RangeError("A selection needs at least one range")
     for (let pos = 0, i = 0; i < ranges.length; i++) {
       let range = ranges[i]
-      if (range.empty ? range.from <= pos : range.from < pos) return normalized(ranges.slice(), mainIndex)
+      if (range.empty ? range.from <= pos : range.from < pos) return EditorSelection.normalized(ranges.slice(), mainIndex)
       pos = range.to
     }
     return new EditorSelection(ranges, mainIndex)
@@ -187,32 +190,34 @@ export class EditorSelection {
   /// Create a cursor selection range at the given position. You can
   /// safely ignore the optional arguments in most situations.
   static cursor(pos: number, assoc = 0, bidiLevel?: number, goalColumn?: number) {
-    return new SelectionRange(pos, pos, (assoc == 0 ? 0 : assoc < 0 ? RangeFlag.AssocBefore : RangeFlag.AssocAfter) |
-                              (bidiLevel == null ? 3 : Math.min(2, bidiLevel)) |
-                              ((goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset))
+    return SelectionRange.create(
+      pos, pos, (assoc == 0 ? 0 : assoc < 0 ? RangeFlag.AssocBefore : RangeFlag.AssocAfter) |
+      (bidiLevel == null ? 3 : Math.min(2, bidiLevel)) |
+      ((goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset))
   }
 
   /// Create a selection range.
   static range(anchor: number, head: number, goalColumn?: number) {
     let goal = (goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset
-    return head < anchor ? new SelectionRange(head, anchor, RangeFlag.Inverted | goal | RangeFlag.AssocAfter)
-      : new SelectionRange(anchor, head, goal | (head > anchor ? RangeFlag.AssocBefore : 0))
+    return head < anchor ? SelectionRange.create(head, anchor, RangeFlag.Inverted | goal | RangeFlag.AssocAfter)
+      : SelectionRange.create(anchor, head, goal | (head > anchor ? RangeFlag.AssocBefore : 0))
   }
-}
 
-function normalized(ranges: SelectionRange[], mainIndex: number = 0): EditorSelection {
-  let main = ranges[mainIndex]
-  ranges.sort((a, b) => a.from - b.from)
-  mainIndex = ranges.indexOf(main)
-  for (let i = 1; i < ranges.length; i++) {
-    let range = ranges[i], prev = ranges[i - 1]
-    if (range.empty ? range.from <= prev.to : range.from < prev.to) {
-      let from = prev.from, to = Math.max(range.to, prev.to)
-      if (i <= mainIndex) mainIndex--
-      ranges.splice(--i, 2, range.anchor > range.head ? EditorSelection.range(to, from) : EditorSelection.range(from, to))
+  /// @internal
+  static normalized(ranges: SelectionRange[], mainIndex: number = 0): EditorSelection {
+    let main = ranges[mainIndex]
+    ranges.sort((a, b) => a.from - b.from)
+    mainIndex = ranges.indexOf(main)
+    for (let i = 1; i < ranges.length; i++) {
+      let range = ranges[i], prev = ranges[i - 1]
+      if (range.empty ? range.from <= prev.to : range.from < prev.to) {
+        let from = prev.from, to = Math.max(range.to, prev.to)
+        if (i <= mainIndex) mainIndex--
+        ranges.splice(--i, 2, range.anchor > range.head ? EditorSelection.range(to, from) : EditorSelection.range(from, to))
+      }
     }
+    return new EditorSelection(ranges, mainIndex)
   }
-  return new EditorSelection(ranges, mainIndex)
 }
 
 export function checkSelection(selection: EditorSelection, docLength: number) {

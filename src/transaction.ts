@@ -163,8 +163,7 @@ export class Transaction {
   /// @internal
   _state: EditorState | null = null
 
-  /// @internal
-  constructor(
+  private constructor(
     /// The state from which the transaction starts.
     readonly startState: EditorState,
     /// The document changes made by this transaction.
@@ -183,6 +182,13 @@ export class Transaction {
     if (selection) checkSelection(selection, changes.newLength)
     if (!annotations.some((a: Annotation<any>) => a.type == Transaction.time))
       this.annotations = annotations.concat(Transaction.time.of(Date.now()))
+  }
+
+  /// @internal
+  static create(startState: EditorState, changes: ChangeSet, selection: EditorSelection | undefined,
+                effects: readonly StateEffect<any>[], annotations: readonly Annotation<any>[],
+                scrollIntoView: boolean) {
+    return new Transaction(startState, changes, selection, effects, annotations, scrollIntoView)
   }
 
   /// The new document produced by the transaction. Contrary to
@@ -339,7 +345,7 @@ export function resolveTransaction(state: EditorState, specs: readonly Transacti
     let seq = !!specs[i].sequential
     s = mergeTransaction(s, resolveTransactionInner(state, specs[i], seq ? s.changes.newLength : state.doc.length), seq)
   }
-  let tr = new Transaction(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView)
+  let tr = Transaction.create(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView)
   return extendTransaction(filter ? filterTransaction(tr) : tr)
 }
 
@@ -364,9 +370,9 @@ function filterTransaction(tr: Transaction) {
       changes = filtered.changes
       back = filtered.filtered.invertedDesc
     }
-    tr = new Transaction(state, changes, tr.selection && tr.selection.map(back),
-                         StateEffect.mapEffects(tr.effects, back),
-                         tr.annotations, tr.scrollIntoView)
+    tr = Transaction.create(state, changes, tr.selection && tr.selection.map(back),
+                            StateEffect.mapEffects(tr.effects, back),
+                            tr.annotations, tr.scrollIntoView)
   }
 
   // Transaction filters
@@ -387,7 +393,8 @@ function extendTransaction(tr: Transaction) {
     if (extension && Object.keys(extension).length)
       spec = mergeTransaction(tr, resolveTransactionInner(state, extension, tr.changes.newLength), true)
   }
-  return spec == tr ? tr : new Transaction(state, tr.changes, tr.selection, spec.effects, spec.annotations, spec.scrollIntoView)
+  return spec == tr ? tr : Transaction.create(state, tr.changes, tr.selection, spec.effects,
+                                              spec.annotations, spec.scrollIntoView)
 }
 
 const none: readonly any[] = []
