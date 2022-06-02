@@ -313,9 +313,19 @@ export class EditorState {
   /// Look up a translation for the given phrase (via the
   /// [`phrases`](#state.EditorState^phrases) facet), or return the
   /// original string if no translation is found.
-  phrase(phrase: string): string {
+  ///
+  /// If additional arguments are passed, they will be inserted in
+  /// place of markers like `$1` (for the first value) and `$2`, etc.
+  /// A single `$` is equivalent to `$1`, and `$$` will produce a
+  /// literal dollar sign.
+  phrase(phrase: string, ...insert: any[]): string {
     for (let map of this.facet(EditorState.phrases))
-      if (Object.prototype.hasOwnProperty.call(map, phrase)) return map[phrase]
+      if (Object.prototype.hasOwnProperty.call(map, phrase)) { phrase = map[phrase]; break }
+    if (insert.length) phrase = phrase.replace(/\$(\$|\d*)/g, (m, i) => {
+      if (i == "$") return "$"
+      let n = +(i || 1)
+      return n > insert.length ? m : insert[n - 1]
+    })
     return phrase
   }
 
