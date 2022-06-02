@@ -1,3 +1,9 @@
+## 0.20.1 (2022-06-02)
+
+### New features
+
+`EditorView.phrase` now accepts additional arguments, which it will interpolate into the phrase in the place of `$` markers.
+
 ## 0.20.0 (2022-04-20)
 
 ### Breaking changes
