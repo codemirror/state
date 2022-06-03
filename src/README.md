@@ -1,4 +1,4 @@
-In its most basic form, the editor state is made up of a current <a
+In its most basic form, an editor's state is made up of a current <a
 href="#state.EditorState.doc">document</a> and a <a
 href="#state.EditorState.selection">selection</a>. Because there are a
 lot of extra pieces that an editor might need to keep in its state

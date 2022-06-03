@@ -85,8 +85,5 @@ export function fromCodePoint(code: number) {
   return String.fromCharCode((code >> 10) + 0xd800, (code & 1023) + 0xdc00)
 }
 
-/// The first character that takes up two positions in a JavaScript
-/// string. It is often useful to compare with this after calling
-/// `codePointAt`, to figure out whether your character takes up 1 or
-/// 2 index positions.
-export function codePointSize(code: number) { return code < 0x10000 ? 1 : 2 }
+/// The amount of positions a character takes up a JavaScript string.
+export function codePointSize(code: number): 1 | 2 { return code < 0x10000 ? 1 : 2 }
