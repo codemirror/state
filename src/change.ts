@@ -24,6 +24,7 @@ export class ChangeDesc {
   // unaffected sections, and the length of the replacement content
   // otherwise. So an insertion would be (0, n>0), a deletion (n>0,
   // 0), and a replacement two positive numbers.
+  /// @internal
   protected constructor(
     /// @internal
     readonly sections: readonly number[]
