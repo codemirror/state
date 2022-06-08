@@ -1,6 +1,6 @@
 # @codemirror/state [![NPM version](https://img.shields.io/npm/v/@codemirror/state.svg)](https://www.npmjs.org/package/@codemirror/state)
 
-[ [**WEBSITE**](https://codemirror.net/) | [**DOCS**](https://codemirror.net/docs/ref/#state) | [**ISSUES**](https://github.com/codemirror/codemirror.next/issues) | [**FORUM**](https://discuss.codemirror.net/c/next/) | [**CHANGELOG**](https://github.com/codemirror/state/blob/main/CHANGELOG.md) ]
+[ [**WEBSITE**](https://codemirror.net/) | [**DOCS**](https://codemirror.net/docs/ref/#state) | [**ISSUES**](https://github.com/codemirror/dev/issues) | [**FORUM**](https://discuss.codemirror.net/c/next/) | [**CHANGELOG**](https://github.com/codemirror/state/blob/main/CHANGELOG.md) ]
 
 This package implements the editor state data structures for the
 [CodeMirror](https://codemirror.net/) code editor.
