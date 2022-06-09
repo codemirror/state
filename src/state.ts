@@ -324,7 +324,7 @@ export class EditorState {
     if (insert.length) phrase = phrase.replace(/\$(\$|\d*)/g, (m, i) => {
       if (i == "$") return "$"
       let n = +(i || 1)
-      return n > insert.length ? m : insert[n - 1]
+      return !n || n > insert.length ? m : insert[n - 1]
     })
     return phrase
   }
