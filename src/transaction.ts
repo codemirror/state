@@ -368,7 +368,7 @@ function filterTransaction(tr: Transaction) {
     } else {
       let filtered = tr.changes.filter(result)
       changes = filtered.changes
-      back = filtered.filtered.invertedDesc
+      back = filtered.filtered.mapDesc(filtered.changes).invertedDesc
     }
     tr = Transaction.create(state, changes, tr.selection && tr.selection.map(back),
                             StateEffect.mapEffects(tr.effects, back),
