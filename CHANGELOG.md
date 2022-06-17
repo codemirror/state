@@ -1,3 +1,9 @@
+## 6.0.1 (2022-06-17)
+
+### Bug fixes
+
+Fix a problem that caused effects' `map` methods to be called with an incorrect change set when filtering changes.
+
 ## 6.0.0 (2022-06-08)
 
 ### Breaking changes
