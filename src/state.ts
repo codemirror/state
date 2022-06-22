@@ -208,7 +208,7 @@ export class EditorState {
     }
     if (fields) for (let prop in fields) {
       let value = fields[prop]
-      if (value instanceof StateField)
+      if (value instanceof StateField && this.config.address[value.id] != null)
         result[prop] = value.spec.toJSON!(this.field(fields[prop]), this)
     }
     return result
@@ -223,8 +223,10 @@ export class EditorState {
       throw new RangeError("Invalid JSON representation for EditorState")
     let fieldInit = []
     if (fields) for (let prop in fields) {
-      let field = fields[prop], value = json[prop]
-      fieldInit.push(field.init(state => field.spec.fromJSON!(value, state)))
+      if (Object.prototype.hasOwnProperty.call(json, prop)) {
+        let field = fields[prop], value = json[prop]
+        fieldInit.push(field.init(state => field.spec.fromJSON!(value, state)))
+      }
     }
 
     return EditorState.create({
