@@ -20,12 +20,13 @@ type FacetConfig<Input, Output> = {
   compareInput?: (a: Input, b: Input) => boolean,
   /// Forbids dynamic inputs to this facet.
   static?: boolean,
-  /// If given, these extension(s) will be added to any state where
-  /// this facet is provided. (Note that, while a facet's default
-  /// value can be read from a state even if the facet wasn't present
-  /// in the state at all, these extensions won't be added in that
+  /// If given, these extension(s) (or the result of calling the given
+  /// function with the facet) will be added to any state where this
+  /// facet is provided. (Note that, while a facet's default value can
+  /// be read from a state even if the facet wasn't present in the
+  /// state at all, these extensions won't be added in that
   /// situation.)
-  enables?: Extension
+  enables?: Extension | ((self: Facet<Input, Output>) => Extension)
 }
 
 /// A facet is a labeled value that is associated with an editor
@@ -41,6 +42,8 @@ export class Facet<Input, Output = readonly Input[]> {
   readonly id = nextID++
   /// @internal
   readonly default: Output
+  /// @internal
+  readonly extensions: Extension | undefined
 
   private constructor(
     /// @internal
@@ -50,10 +53,10 @@ export class Facet<Input, Output = readonly Input[]> {
     /// @internal
     readonly compare: (a: Output, b: Output) => boolean,
     private isStatic: boolean,
-    /// @internal
-    readonly extensions: Extension | undefined
+    enables: Extension | undefined | ((self: Facet<Input, Output>) => Extension)
   ) {
     this.default = combine([])
+    this.extensions = typeof enables == "function" ? enables(this) : enables
   }
 
   /// Define a new facet.
