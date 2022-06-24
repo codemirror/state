@@ -426,45 +426,59 @@ function iterChanges(desc: ChangeDesc,
 function mapSet(setA: ChangeSet, setB: ChangeDesc, before: boolean, mkSet: true): ChangeSet
 function mapSet(setA: ChangeDesc, setB: ChangeDesc, before: boolean): ChangeDesc
 function mapSet(setA: ChangeDesc, setB: ChangeDesc, before: boolean, mkSet = false): ChangeSet | ChangeDesc {
+  // Produce a copy of setA that applies to the document after setB
+  // has been applied (assuming both start at the same document).
   let sections: number[] = [], insert: Text[] | null = mkSet ? [] : null
   let a = new SectionIter(setA), b = new SectionIter(setB)
-  for (let posA = 0, posB = 0;;) {
-    if (a.ins == -1) {
-      posA += a.len
-      a.next()
-    } else if (b.ins == -1 && posB < posA) {
-      let skip = Math.min(b.len, posA - posB)
-      b.forward(skip)
-      addSection(sections, skip, -1)
-      posB += skip
-    } else if (b.ins >= 0 && (a.done || posB < posA || posB == posA && (b.len < a.len || b.len == a.len && !before))) {
+  // Iterate over both sets in parallel. inserted tracks, for changes
+  // in A that have to be processed piece-by-piece, whether their
+  // content has been inserted already, and refers to the section
+  // index.
+  for (let inserted = -1;;) {
+    if (a.ins == -1 && b.ins == -1) {
+      // Move across ranges skipped by both sets.
+      let len = Math.min(a.len, b.len)
+      addSection(sections, len, -1)
+      a.forward(len)
+      b.forward(len)
+    } else if (b.ins >= 0 && (a.ins < 0 || inserted == a.i || a.off == 0 && (b.len < a.len || b.len == a.len && !before))) {
+      // If there's a change in B that comes before the next change in
+      // A (ordered by start pos, then len, then before flag), skip
+      // that (and process any changes in A it covers).
+      let len = b.len
       addSection(sections, b.ins, -1)
-      while (posA > posB && !a.done && posA + a.len < posB + b.len) {
-        posA += a.len
-        a.next()
+      while (len) {
+        let piece = Math.min(a.len, len)
+        if (a.ins >= 0 && inserted < a.i && a.len <= piece) {
+          addSection(sections, 0, a.ins)
+          if (insert) addInsert(insert, sections, a.text)
+          inserted = a.i
+        }
+        a.forward(piece)
+        len -= piece
       }
-      posB += b.len
       b.next()
     } else if (a.ins >= 0) {
-      let len = 0, end = posA + a.len
-      for (;;) {
-        if (b.ins >= 0 && posB > posA && posB + b.len < end) {
-          len += b.ins
-          posB += b.len
+      // Process the part of a change in A up to the start of the next
+      // non-deletion change in B (if overlapping).
+      let len = 0, left = a.len
+      while (left) {
+        if (b.ins == -1) {
+          let piece = Math.min(left, b.len)
+          len += piece
+          left -= piece
+          b.forward(piece)
+        } else if (b.ins == 0 && b.len < left) {
+          left -= b.len
           b.next()
-        } else if (b.ins == -1 && posB < end) {
-          let skip = Math.min(b.len, end - posB)
-          len += skip
-          b.forward(skip)
-          posB += skip
         } else {
           break
         }
       }
-      addSection(sections, len, a.ins)
-      if (insert) addInsert(insert, sections, a.text)
-      posA = end
-      a.next()
+      addSection(sections, len, inserted < a.i ? a.ins : 0)
+      if (insert && inserted < a.i) addInsert(insert, sections, a.text)
+      inserted = a.i
+      a.forward(a.len - left)
     } else if (a.done && b.done) {
       return insert ? ChangeSet.createSet(sections, insert) : ChangeDesc.create(sections)
     } else {

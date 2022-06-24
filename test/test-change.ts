@@ -97,15 +97,15 @@ describe("ChangeDesc", () => {
     it("joins deletions",
        () => over("5:0 2 3:0 2", "4 4:0 4", "6:0 2"))
 
-    it("drops insertions in deletions", () => {
-      under("2 0:1 2", "4:0", "")
-      over("4 0:1 4", "2 4:0 2", "4")
+    it("keeps insertions in deletions", () => {
+      under("2 0:1 2", "4:0", "0:1")
+      over("4 0:1 4", "2 4:0 2", "2 0:1 2")
     })
 
     it("keeps replacements", () => {
       over("2 2:2 2", "0:2 6", "4 2:2 2")
       over("2 2:2 2", "3:0 3", "1:2 2")
-      over("1 4:4 1", "3 0:2 3", "1 6:4 1")
+      over("1 4:4 1", "3 0:2 3", "1 2:4 2 2:0 1")
       over("1 4:4 1", "2 2:0 2", "1 2:4 1")
       over("2 2:2 2", "3 2:0 1", "2 1:2 1")
     })
@@ -187,7 +187,7 @@ describe("ChangeSet", () => {
       {insert: "hi", from: 5}, {insert: "ok", from: 5},
       {from: 0, to: 3}, {from: 4, to: 6},
       {insert: "boo", from: 8}
-    ], 10).desc.toString(), "3:0 1 2:0 2 0:3 2")
+    ], 10).desc.toString(), "3:0 1 1:0 0:4 1:0 2 0:3 2")
   })
 
   let doc10 = Text.of(["0123456789"])
@@ -247,7 +247,7 @@ describe("ChangeSet", () => {
         let setAB = setA.compose(setB1), setBA = setB.compose(setA1)
         ist(setAB.apply(doc).toString(), setBA.apply(doc).toString())
       } catch (e) {
-        console.log(`a = ChangeSet.of(${JSON.stringify(a)}, ${size})\nb = ChangeSet.of(${JSON.stringify(b)}, ${size})`)
+        console.log(`size = ${size}\na = ${JSON.stringify(a)}\nb = ${JSON.stringify(b)}`)
         throw e
       }
     }
