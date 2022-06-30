@@ -1,3 +1,13 @@
+## 6.1.0 (2022-06-30)
+
+### Bug fixes
+
+Refine change mapping to preserve insertions made by concurrent changes.
+
+### New features
+
+The `enables` option to `Facet.define` may now take a function, which will be called with the facet value to create the extensions.
+
 ## 6.0.1 (2022-06-17)
 
 ### Bug fixes
