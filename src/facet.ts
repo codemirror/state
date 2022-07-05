@@ -510,10 +510,10 @@ function flatten(extension: Extension, compartments: Map<Compartment, Extension>
       inner(ext.inner, ext.prec)
     } else if (ext instanceof StateField) {
       result[prec].push(ext)
-      if (ext.provides) inner(ext.provides, prec)
+      if (ext.provides) inner(ext.provides, Prec_.default)
     } else if (ext instanceof FacetProvider) {
       result[prec].push(ext)
-      if (ext.facet.extensions) inner(ext.facet.extensions, prec)
+      if (ext.facet.extensions) inner(ext.facet.extensions, Prec_.default)
     } else {
       let content = (ext as any).extension
       if (!content) throw new Error(`Unrecognized extension value in extension set (${ext}). This sometimes happens because multiple instances of @codemirror/state are loaded, breaking instanceof checks.`)
