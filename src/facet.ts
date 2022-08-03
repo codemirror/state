@@ -510,7 +510,7 @@ function flatten(extension: Extension, compartments: Map<Compartment, Extension>
       inner(ext.inner, ext.prec)
     } else if (ext instanceof StateField) {
       result[prec].push(ext)
-      if (ext.provides) inner(ext.provides, Prec_.default)
+      if (ext.provides) inner(ext.provides, prec)
     } else if (ext instanceof FacetProvider) {
       result[prec].push(ext)
       if (ext.facet.extensions) inner(ext.facet.extensions, Prec_.default)
