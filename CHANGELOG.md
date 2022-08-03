@@ -1,3 +1,9 @@
+## 6.1.1 (2022-08-03)
+
+### Bug fixes
+
+Fix a bug in range set span iteration that would cause decorations to be inappropriately split in some situations.
+
 ## 6.1.0 (2022-06-30)
 
 ### Bug fixes
