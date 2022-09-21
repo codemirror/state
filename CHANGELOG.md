@@ -1,3 +1,9 @@
+## 6.1.2 (2022-09-21)
+
+### Bug fixes
+
+Fix an issue where, when multiple transaction extenders took effect, only the highest-precedence one was actually included in the transaction.
+
 ## 6.1.1 (2022-08-03)
 
 ### Bug fixes
