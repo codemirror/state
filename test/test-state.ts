@@ -248,5 +248,17 @@ describe("EditorState", () => {
       let trNoFilter = state.update({changes: {from: 0, insert: "!"}, filter: false})
       ist(trNoFilter.annotation(ann), 100)
     })
+
+    it("allows multipe extenders to take effect", () => {
+      let eff = StateEffect.define<number>()
+      let state = EditorState.create({
+        extensions: [
+          EditorState.transactionExtender.of(() => ({effects: eff.of(1)})),
+          EditorState.transactionExtender.of(() => ({effects: eff.of(2)}))
+        ]
+      })
+      let tr = state.update({scrollIntoView: true})
+      ist(tr.effects.map(e => e.is(eff) ? e.value : 0).join(), "2,1")
+    })
   })
 })

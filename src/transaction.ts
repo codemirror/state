@@ -391,7 +391,7 @@ function extendTransaction(tr: Transaction) {
   for (let i = extenders.length - 1; i >= 0; i--) {
     let extension = extenders[i](tr)
     if (extension && Object.keys(extension).length)
-      spec = mergeTransaction(tr, resolveTransactionInner(state, extension, tr.changes.newLength), true)
+      spec = mergeTransaction(spec, resolveTransactionInner(state, extension, tr.changes.newLength), true)
   }
   return spec == tr ? tr : Transaction.create(state, tr.changes, tr.selection, spec.effects,
                                               spec.annotations, spec.scrollIntoView)
