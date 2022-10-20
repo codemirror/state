@@ -337,6 +337,18 @@ export class EditorState {
 
   /// Find the values for a given language data field, provided by the
   /// the [`languageData`](#state.EditorState^languageData) facet.
+  ///
+  /// Examples of language data fields are...
+  ///
+  /// - [`"commentTokens"`](#commands.CommentTokens) for specifying
+  ///   comment syntax.
+  /// - [`"autocomplete"`](#autocomplete.autocompletion^config.override)
+  ///   for providing language-specific completion sources.
+  /// - [`"wordChars"`](#state.EditorState.charCategorizer) for adding
+  ///   characters that should be considered part of words in this
+  ///   language.
+  /// - [`"closeBrackets"`](#autocomplete.CloseBracketConfig) controls
+  ///   bracket closing behavior.
   languageDataAt<T>(name: string, pos: number, side: -1 | 0 | 1 = -1): readonly T[] {
     let values: T[] = []
     for (let provider of this.facet(languageData)) {
