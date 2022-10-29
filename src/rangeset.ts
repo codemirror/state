@@ -349,7 +349,7 @@ export class RangeSet<T extends RangeValue> {
     oldSets: readonly RangeSet<T>[], newSets: readonly RangeSet<T>[],
     from = 0, to?: number
   ) {
-    if (to == null) to = C.Far
+    if (to == null) to = C.Far - 1
     let a = oldSets.filter(set => !set.isEmpty && newSets.indexOf(set) < 0)
     let b = newSets.filter(set => !set.isEmpty && oldSets.indexOf(set) < 0)
     if (a.length != b.length) return false
