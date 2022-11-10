@@ -1,3 +1,11 @@
+## 6.1.3 (2022-11-10)
+
+### Bug fixes
+
+Avoid unnecessary calls to computed facet getters when a state is reconfigured but no dependencies of the computed facet change.
+
+Fix an infinite loop in `RangeSet.eq` when the `to` parameter isn't given.
+
 ## 6.1.2 (2022-09-21)
 
 ### Bug fixes
