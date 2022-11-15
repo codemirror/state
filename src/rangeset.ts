@@ -379,21 +379,22 @@ export class RangeSet<T extends RangeValue> {
     minPointSize: number = -1
   ): number {
     let cursor = new SpanCursor(sets, null, minPointSize).goto(from), pos = from
-    let open = cursor.openStart
+    let openRanges = cursor.openStart
     for (;;) {
       let curTo = Math.min(cursor.to, to)
       if (cursor.point) {
-        iterator.point(pos, curTo, cursor.point, cursor.activeForPoint(cursor.to), open, cursor.pointRank)
-        open = cursor.openEnd(curTo) + (cursor.to > curTo ? 1 : 0)
+        let active = cursor.activeForPoint(cursor.to)
+        let openCount = cursor.pointFrom < from ? active.length + 1 : Math.min(active.length, openRanges)
+        iterator.point(pos, curTo, cursor.point, active, openCount, cursor.pointRank)
+        openRanges = Math.min(cursor.openEnd(curTo), active.length)
       } else if (curTo > pos) {
-        iterator.span(pos, curTo, cursor.active, open)
-        open = cursor.openEnd(curTo)
+        iterator.span(pos, curTo, cursor.active, openRanges)
+        openRanges = cursor.openEnd(curTo)
       }
-      if (cursor.to > to) break
+      if (cursor.to > to) return openRanges + (cursor.point && cursor.to > to ? 1 : 0)
       pos = cursor.to
       cursor.next()
     }
-    return open
   }
 
   /// Create a range set for the given range or array of ranges. By
@@ -693,6 +694,8 @@ class SpanCursor<T extends RangeValue> {
 
   to = -C.Far
   endSide = 0
+  // The amount of open active ranges at the start of the iterator.
+  // Not including points.
   openStart = -1
 
   constructor(sets: readonly RangeSet<T>[],
@@ -740,7 +743,7 @@ class SpanCursor<T extends RangeValue> {
   next() {
     let from = this.to, wasPoint = this.point
     this.point = null
-    let trackOpen = this.openStart < 0 ? [] : null, trackExtra = 0
+    let trackOpen = this.openStart < 0 ? [] : null
     for (;;) {
       let a = this.minActive
       if (a > -1 && (this.activeTo[a] - this.cursor.from || this.active[a].endSide - this.cursor.startSide) < 0) {
@@ -762,7 +765,6 @@ class SpanCursor<T extends RangeValue> {
         let nextVal = this.cursor.value
         if (!nextVal.point) { // Opening a range
           this.addActive(trackOpen)
-          if (this.cursor.from < from && this.cursor.to > from) trackExtra++
           this.cursor.next()
         } else if (wasPoint && this.cursor.to == this.to && this.cursor.from < this.cursor.to) {
           // Ignore any non-empty points that end precisely at the end of the prev point
@@ -773,7 +775,6 @@ class SpanCursor<T extends RangeValue> {
           this.pointRank = this.cursor.rank
           this.to = this.cursor.to
           this.endSide = nextVal.endSide
-          if (this.cursor.from < from) trackExtra = 1
           this.cursor.next()
           this.forward(this.to, this.endSide)
           break
@@ -781,9 +782,8 @@ class SpanCursor<T extends RangeValue> {
       }
     }
     if (trackOpen) {
-      let openStart = 0
-      while (openStart < trackOpen.length && trackOpen[openStart] < from) openStart++
-      this.openStart = openStart + trackExtra
+      this.openStart = 0
+      for (let i = trackOpen.length - 1; i >= 0 && trackOpen[i] < from; i--) this.openStart++
     }
   }
 
