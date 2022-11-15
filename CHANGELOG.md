@@ -1,3 +1,9 @@
+## 6.1.4 (2022-11-15)
+
+### Bug fixes
+
+Fix a bug that caused the `openStart` value passed to span iterators to be incorrect around widgets in some circumstances.
+
 ## 6.1.3 (2022-11-10)
 
 ### Bug fixes
