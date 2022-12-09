@@ -102,7 +102,6 @@ export class EditorState {
           conf = null
         }
         compartments.set(effect.value.compartment, effect.value.extension)
-        this
       } else if (effect.is(StateEffect.reconfigure)) {
         conf = null
         base = effect.value
