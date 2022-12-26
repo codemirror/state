@@ -197,10 +197,11 @@ export class EditorSelection {
   }
 
   /// Create a selection range.
-  static range(anchor: number, head: number, goalColumn?: number) {
-    let goal = (goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset
-    return head < anchor ? SelectionRange.create(head, anchor, RangeFlag.Inverted | goal | RangeFlag.AssocAfter)
-      : SelectionRange.create(anchor, head, goal | (head > anchor ? RangeFlag.AssocBefore : 0))
+  static range(anchor: number, head: number, goalColumn?: number, bidiLevel?: number) {
+    let flags = ((goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset) |
+      (bidiLevel == null ? 3 : Math.min(2, bidiLevel))
+    return head < anchor ? SelectionRange.create(head, anchor, RangeFlag.Inverted | RangeFlag.AssocAfter | flags)
+      : SelectionRange.create(anchor, head, (head > anchor ? RangeFlag.AssocBefore : 0) | flags)
   }
 
   /// @internal
