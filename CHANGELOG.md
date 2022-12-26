@@ -1,3 +1,9 @@
+## 6.2.0 (2022-12-26)
+
+### New features
+
+`EditorSelection.range` now accepts an optional 4th argument to specify the bidi level of the range's head position.
+
 ## 6.1.4 (2022-11-15)
 
 ### Bug fixes
