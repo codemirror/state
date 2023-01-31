@@ -86,7 +86,10 @@ export class StateEffect<Value> {
   is<T>(type: StateEffectType<T>): this is StateEffect<T> { return this.type == type as any }
 
   /// Define a new effect type. The type parameter indicates the type
-  /// of values that his effect holds.
+  /// of values that his effect holds. It should be a type that
+  /// doesn't include `undefined`, since that is used in
+  /// [mapping](#state.StateEffect.map) to indicate that an effect is
+  /// removed.
   static define<Value = null>(spec: StateEffectSpec<Value> = {}): StateEffectType<Value> {
     return new StateEffectType(spec.map || (v => v))
   }
