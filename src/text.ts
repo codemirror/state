@@ -125,7 +125,8 @@ export abstract class Text implements Iterable<string> {
   /// @internal
   abstract decompose(from: number, to: number, target: Text[], open: Open): void
 
-  /// @internal
+  /// Return the document as a string, using newline characters to
+  /// separate lines.
   toString() { return this.sliceString(0) }
 
   /// Convert the document to an array of lines (which can be
