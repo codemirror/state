@@ -324,8 +324,7 @@ export class RangeSet<T extends RangeValue> {
   static compare<T extends RangeValue>(
     oldSets: readonly RangeSet<T>[], newSets: readonly RangeSet<T>[],
     /// This indicates how the underlying data changed between these
-    /// ranges, and is needed to synchronize the iteration. `from` and
-    /// `to` are coordinates in the _new_ space, after these changes.
+    /// ranges, and is needed to synchronize the iteration.
     textDiff: ChangeDesc,
     comparator: RangeComparator<T>,
     /// Can be used to ignore all non-point ranges, and points below
