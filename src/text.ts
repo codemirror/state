@@ -67,7 +67,7 @@ export abstract class Text implements Iterable<string> {
   /// Retrieve the text between the given points.
   slice(from: number, to: number = this.length): Text {
     let parts: Text[] = []
-    this.decompose(from, to, parts, 0)
+    this.decompose(from, to, parts, 0 as Open)
     return TextNode.from(parts, to - from)
   }
 
