@@ -10,12 +10,12 @@ import {ChangeDesc} from "./change"
 // - Any further bits hold the goal column (only for ranges
 //   produced by vertical motion)
 const enum RangeFlag {
-  BidiLevelMask = 3,
-  AssocBefore = 4,
-  AssocAfter = 8,
-  Inverted = 16,
-  GoalColumnOffset = 5,
-  NoGoalColumn = 0x1ffffff
+  BidiLevelMask = 7,
+  AssocBefore = 8,
+  AssocAfter = 16,
+  Inverted = 32,
+  GoalColumnOffset = 6,
+  NoGoalColumn = 0xffffff
 }
   
 /// A single selection range. When
@@ -52,7 +52,7 @@ export class SelectionRange {
   /// any.
   get bidiLevel(): number | null {
     let level = this.flags & RangeFlag.BidiLevelMask
-    return level == 3 ? null : level
+    return level == 7 ? null : level
   }
 
   /// The goal column (stored vertical offset) associated with a
@@ -192,14 +192,14 @@ export class EditorSelection {
   static cursor(pos: number, assoc = 0, bidiLevel?: number, goalColumn?: number) {
     return SelectionRange.create(
       pos, pos, (assoc == 0 ? 0 : assoc < 0 ? RangeFlag.AssocBefore : RangeFlag.AssocAfter) |
-      (bidiLevel == null ? 3 : Math.min(2, bidiLevel)) |
+      (bidiLevel == null ? 7 : Math.min(6, bidiLevel)) |
       ((goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset))
   }
 
   /// Create a selection range.
   static range(anchor: number, head: number, goalColumn?: number, bidiLevel?: number) {
     let flags = ((goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset) |
-      (bidiLevel == null ? 3 : Math.min(2, bidiLevel))
+      (bidiLevel == null ? 7 : Math.min(6, bidiLevel))
     return head < anchor ? SelectionRange.create(head, anchor, RangeFlag.Inverted | RangeFlag.AssocAfter | flags)
       : SelectionRange.create(anchor, head, (head > anchor ? RangeFlag.AssocBefore : 0) | flags)
   }
