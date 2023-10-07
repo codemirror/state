@@ -5,7 +5,8 @@ import {EditorSelection, SelectionRange, checkSelection} from "./selection"
 import {Transaction, TransactionSpec, resolveTransaction, asArray, StateEffect} from "./transaction"
 import {allowMultipleSelections, changeFilter, transactionFilter, transactionExtender,
         lineSeparator, languageData, readOnly} from "./extension"
-import {Configuration, Facet, Extension, StateField, SlotStatus, ensureAddr, getAddr, Compartment, DynamicSlot} from "./facet"
+import {Configuration, Facet, FacetReader, Extension, StateField, SlotStatus, ensureAddr, getAddr,
+        Compartment, DynamicSlot} from "./facet"
 import {CharCategory, makeCategorizer} from "./charcategory"
 
 /// Options passed when [creating](#state.EditorState^create) an
@@ -189,7 +190,7 @@ export class EditorState {
   }
 
   /// Get the value of a state [facet](#state.Facet).
-  facet<Output>(facet: Facet<any, Output>): Output {
+  facet<Output>(facet: FacetReader<Output>): Output {
     let addr = this.config.address[facet.id]
     if (addr == null) return facet.default
     ensureAddr(this, addr)

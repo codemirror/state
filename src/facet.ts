@@ -37,7 +37,10 @@ type FacetConfig<Input, Output> = {
 /// size](#state.EditorState^tabSize), [editor
 /// attributes](#view.EditorView^editorAttributes), and [update
 /// listeners](#view.EditorView^updateListener).
-export class Facet<Input, Output = readonly Input[]> {
+///
+/// Note that `Facet` instances can be used anywhere where
+/// [`FacetReader`](#state.FacetReader) is expected.
+export class Facet<Input, Output = readonly Input[]> implements FacetReader<Output> {
   /// @internal
   readonly id = nextID++
   /// @internal
@@ -58,6 +61,10 @@ export class Facet<Input, Output = readonly Input[]> {
     this.default = combine([])
     this.extensions = typeof enables == "function" ? enables(this) : enables
   }
+
+  /// Returns a facet reader for this facet, which can be used to
+  /// [read](#state.EditorState.facet) it but not to define values for it.
+  get reader(): FacetReader<Output> { return this }
 
   /// Define a new facet.
   static define<Input, Output = readonly Input[]>(config: FacetConfig<Input, Output> = {}) {
@@ -102,13 +109,31 @@ export class Facet<Input, Output = readonly Input[]> {
     if (!get) get = x => x as any
     return this.compute([field], state => get!(state.field(field)))
   }
+
+  tag!: typeof FacetTag
+}
+
+declare const FacetTag: unique symbol
+
+/// A facet reader can be used to fetch the value of a facet, though
+/// [`EditorState.facet`](#state.EditorState.facet) or as a dependency
+/// in [`Facet.compute`](#state.Facet.compute), but not to define new
+/// values for the facet.
+export type FacetReader<Output> = {
+  /// @internal
+  id: number
+  /// @internal
+  default: Output
+  /// Dummy tag that makes sure TypeScript doesn't consider all object
+  /// types as conforming to this type.
+  tag: typeof FacetTag
 }
 
 function sameArray<T>(a: readonly T[], b: readonly T[]) {
   return a == b || a.length == b.length && a.every((e, i) => e === b[i])
 }
 
-type Slot<T> = Facet<any, T> | StateField<T> | "doc" | "selection"
+type Slot<T> = FacetReader<T> | StateField<T> | "doc" | "selection"
 
 const enum Provider { Static, Single, Multi }
 

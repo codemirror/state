@@ -104,6 +104,8 @@ extensions for the editor state.
 
 @Facet
 
+@FacetReader
+
 @Prec
 
 @Compartment

@@ -1,6 +1,6 @@
 export {EditorStateConfig, EditorState} from "./state"
 export {StateCommand} from "./extension"
-export {Facet, StateField, Extension, Prec, Compartment} from "./facet"
+export {Facet, FacetReader, StateField, Extension, Prec, Compartment} from "./facet"
 export {EditorSelection, SelectionRange} from "./selection"
 export {Transaction, TransactionSpec, Annotation, AnnotationType, StateEffect, StateEffectType} from "./transaction"
 export {combineConfig} from "./config"
