@@ -1,3 +1,9 @@
+## 6.3.0 (2023-10-12)
+
+### New features
+
+The new `FacetReader` type provides a way to export a read-only handle to a `Facet`.
+
 ## 6.2.1 (2023-05-23)
 
 ### Bug fixes
