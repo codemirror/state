@@ -1,3 +1,9 @@
+## 6.3.1 (2023-10-18)
+
+### Bug fixes
+
+Give the tag property on `FacetReader` the type of the output type parameter to force TypeScript to infer the proper type when converting from `Facet` to `FacetReader`.
+
 ## 6.3.0 (2023-10-12)
 
 ### New features
