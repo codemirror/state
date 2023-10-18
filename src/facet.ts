@@ -110,10 +110,8 @@ export class Facet<Input, Output = readonly Input[]> implements FacetReader<Outp
     return this.compute([field], state => get!(state.field(field)))
   }
 
-  tag!: typeof FacetTag
+  tag!: Output
 }
-
-declare const FacetTag: unique symbol
 
 /// A facet reader can be used to fetch the value of a facet, though
 /// [`EditorState.facet`](#state.EditorState.facet) or as a dependency
@@ -125,8 +123,9 @@ export type FacetReader<Output> = {
   /// @internal
   default: Output
   /// Dummy tag that makes sure TypeScript doesn't consider all object
-  /// types as conforming to this type.
-  tag: typeof FacetTag
+  /// types as conforming to this type. Not actually present on the
+  /// object.
+  tag: Output
 }
 
 function sameArray<T>(a: readonly T[], b: readonly T[]) {
