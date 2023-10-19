@@ -113,7 +113,7 @@ export class Facet<Input, Output = readonly Input[]> implements FacetReader<Outp
   tag!: Output
 }
 
-/// A facet reader can be used to fetch the value of a facet, though
+/// A facet reader can be used to fetch the value of a facet, through
 /// [`EditorState.facet`](#state.EditorState.facet) or as a dependency
 /// in [`Facet.compute`](#state.Facet.compute), but not to define new
 /// values for the facet.
