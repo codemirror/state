@@ -151,6 +151,16 @@ describe("EditorState", () => {
     ist(state3.facet(facet).join(), "2,1")
   })
 
+  it("blocks multiple selections when not allowed", () => {
+    let cursors = EditorSelection.create([EditorSelection.cursor(0), EditorSelection.cursor(1)])
+    let state = EditorState.create({
+      selection: cursors,
+      doc: "123"
+    })
+    ist(state.selection.ranges.length, 1)
+    ist(state.update({selection: cursors}).state.selection.ranges.length, 1)
+  })
+
   describe("changeByRange", () => {
     it("can make simple changes", () => {
       let state = EditorState.create({doc: "hi"})

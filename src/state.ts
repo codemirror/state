@@ -120,7 +120,8 @@ export class EditorState {
     } else {
       startValues = tr.startState.values.slice()
     }
-    new EditorState(conf, tr.newDoc, tr.newSelection, startValues, (state, slot) => slot.update(state, tr), tr)
+    let selection = tr.startState.facet(allowMultipleSelections) ? tr.newSelection : tr.newSelection.asSingle()
+    new EditorState(conf, tr.newDoc, selection, startValues, (state, slot) => slot.update(state, tr), tr)
   }
 
   /// Create a [transaction spec](#state.TransactionSpec) that
