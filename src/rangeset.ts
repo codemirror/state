@@ -534,8 +534,8 @@ class LayerCursor<T extends RangeValue> {
               readonly minPoint: number,
               readonly rank = 0) {}
 
-  get startSide() { return this.value ? this.value.startSide : 0 }
-  get endSide() { return this.value ? this.value.endSide : 0 }
+  get startSide() { return this.value?.startSide ? this.value.startSide : 0 }
+  get endSide() { return this.value?.endSide ? this.value.endSide : 0 }
 
   goto(pos: number, side: number = -C.Far) {
     this.chunkIndex = this.rangeIndex = 0
