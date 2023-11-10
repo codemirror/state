@@ -518,7 +518,10 @@ class LineCursor implements TextIterator {
 
   next(skip = 0) {
     let {done, lineBreak, value} = this.inner.next(skip)
-    if (done) {
+    if (done && this.afterBreak) {
+      this.value = ""
+      this.afterBreak = false
+    } else if (done) {
       this.done = true
       this.value = ""
     } else if (lineBreak) {
