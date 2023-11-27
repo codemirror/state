@@ -1,3 +1,11 @@
+## 6.3.2 (2023-11-27)
+
+### Bug fixes
+
+Make sure transactions cannot add multiple selections when `allowMultipleSelections` is false.
+
+Fix a bug that caused `Text.iterLines` to not return empty lines at the end of the iterated ranges.
+
 ## 6.3.1 (2023-10-18)
 
 ### Bug fixes
