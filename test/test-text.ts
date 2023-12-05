@@ -225,4 +225,12 @@ describe("Text", () => {
       ist(doc0.slice(from, to).toString(), text0.slice(from, to))
     }
   })
+
+  it("clips out-of-range boundaries", () => {
+    ist(doc0.slice(0, -10).length, 0)
+    ist(Text.empty.slice(0, 10).length, 0)
+    ist(Text.empty.slice(1000, 1100).length, 0)
+    ist(doc0.slice(5, 0).length, 0)
+    ist(doc0.slice(-5, 0).length, 0)
+  })
 })

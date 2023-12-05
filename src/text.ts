@@ -52,6 +52,7 @@ export abstract class Text implements Iterable<string> {
 
   /// Replace a range of the text with the given content.
   replace(from: number, to: number, text: Text): Text {
+    ;[from, to] = clip(this, from, to)
     let parts: Text[] = []
     this.decompose(0, from, parts, Open.To)
     if (text.length) text.decompose(0, text.length, parts, Open.From | Open.To)
@@ -66,6 +67,7 @@ export abstract class Text implements Iterable<string> {
 
   /// Retrieve the text between the given points.
   slice(from: number, to: number = this.length): Text {
+    ;[from, to] = clip(this, from, to)
     let parts: Text[] = []
     this.decompose(from, to, parts, 0 as Open)
     return TextNode.from(parts, to - from)
@@ -198,6 +200,7 @@ class TextLeaf extends Text {
 
   replace(from: number, to: number, text: Text): Text {
     if (!(text instanceof TextLeaf)) return super.replace(from, to, text)
+    ;[from, to] = clip(this, from, to)
     let lines = appendText(this.text, appendText(text.text, sliceText(this.text, 0, from)), to)
     let newLen = this.length + text.length - (to - from)
     if (lines.length <= Tree.Branch) return new TextLeaf(lines, newLen)
@@ -205,6 +208,7 @@ class TextLeaf extends Text {
   }
 
   sliceString(from: number, to = this.length, lineSep = "\n") {
+    ;[from, to] = clip(this, from, to)
     let result = ""
     for (let pos = 0, i = 0; pos <= to && i < this.text.length; i++) {
       let line = this.text[i], end = pos + line.length
@@ -274,6 +278,7 @@ class TextNode extends Text {
   }
 
   replace(from: number, to: number, text: Text): Text {
+    ;[from, to] = clip(this, from, to)
     if (text.lines < this.lines) for (let i = 0, pos = 0; i < this.children.length; i++) {
       let child = this.children[i], end = pos + child.length
       // Fast path: if the change only affects one child and the
@@ -296,6 +301,7 @@ class TextNode extends Text {
   }
 
   sliceString(from: number, to = this.length, lineSep = "\n") {
+    ;[from, to] = clip(this, from, to)
     let result = ""
     for (let i = 0, pos = 0; i < this.children.length && pos <= to; i++) {
       let child = this.children[i], end = pos + child.length
@@ -568,4 +574,9 @@ export class Line {
 
   /// The length of the line (not including any line break after it).
   get length() { return this.to - this.from }
+}
+
+function clip(text: Text, from: number, to: number) {
+  from = Math.max(0, Math.min(text.length, from))
+  return [from, Math.max(from, Math.min(text.length, to))]
 }
