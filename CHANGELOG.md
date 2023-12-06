@@ -1,3 +1,9 @@
+## 6.3.3 (2023-12-06)
+
+### Bug fixes
+
+Fix an issue where `Text.slice` and `Text.replace` could return objects with incorrect `length` when the given `from`/`to` values were out of range for the text.
+
 ## 6.3.2 (2023-11-27)
 
 ### Bug fixes
