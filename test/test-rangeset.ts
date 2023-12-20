@@ -247,7 +247,7 @@ describe("RangeSet", () => {
       test(ranges, {
         changes: [[0, 0, 50], [50, 100, 0], [150, 200, 0]],
         filter: (from: number) => from % 50 > 0
-      }, [50, 51, 100, 103, 150, 153])
+      }, [50, 51, 100, 103, 148, 153])
     })
 
     it("reports point decorations with different cover", () => {
@@ -279,7 +279,7 @@ describe("RangeSet", () => {
 
     it("separates the range in covering spans", () => {
       test(mkSet([mk(3, 8, "one"), mk(5, 8, "two"), mk(10, 12, "three")]), 0, 15,
-           "3 2=one 3=one/two 2 2=three 3")
+           "3 2=one 3=two/one 2 2=three 3")
     })
 
     it("can retrieve a limited range", () => {
@@ -288,7 +288,7 @@ describe("RangeSet", () => {
       let set = mkSet(decos), start = 20, end = start + 6
       let expected = ""
       for (let pos = start; pos < end; pos += (pos % 2 ? 1 : 2))
-        expected += (expected ? " " : "") + (Math.min(end, pos + (pos % 2 ? 1 : 2)) - pos) + "=wide/span" + Math.floor(pos / 2)
+        expected += (expected ? " " : "") + (Math.min(end, pos + (pos % 2 ? 1 : 2)) - pos) + "=span" + Math.floor(pos / 2) + "/wide"
       test(set, start, end, expected)
     })
 
@@ -312,7 +312,7 @@ describe("RangeSet", () => {
 
     it("properly resyncs active ranges after points", () => {
       test(mkSet([mk(0, 20, "r1"), mk(1, 10, "r2"), mk(3, 12, {name: "p", point: true}), mk(4, 8, "r3"), mk(5, 20, "r4")]), 0, 20,
-           "1=r1 2=r1/r2 9=[p] 8=r1/r4")
+           "1=r1 2=r2/r1 9=[p] 8=r4/r1")
     })
 
     it("doesn't split spans on ignored ranges", () => {
@@ -331,6 +331,11 @@ describe("RangeSet", () => {
         point() { points++ }
       })
       ist(points, 1)
+    })
+
+    it("puts smaller spans inside bigger ones with the same rank", () => {
+      test(mkSet([mk(0, 3, {name: "x"}), mk(0, 1, {name: "a"}), mk(1, 2, {name: "b"}), mk(2, 3, {name: "c"})]), 0, 3,
+           "1=a/x 1=b/x 1=c/x")
     })
   })
 

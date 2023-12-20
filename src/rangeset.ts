@@ -729,7 +729,8 @@ class SpanCursor<T extends RangeValue> {
 
   addActive(trackOpen: number[] | null) {
     let i = 0, {value, to, rank} = this.cursor
-    while (i < this.activeRank.length && this.activeRank[i] <= rank) i++
+    // Organize active marks by rank first, then by size
+    while (i < this.activeRank.length && (rank - this.activeRank[i] || to - this.activeTo[i]) > 0) i++
     insert(this.active, i, value)
     insert(this.activeTo, i, to)
     insert(this.activeRank, i, rank)
