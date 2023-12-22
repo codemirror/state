@@ -85,8 +85,9 @@ export class SelectionRange {
   }
 
   /// Compare this range to another range.
-  eq(other: SelectionRange): boolean {
-    return this.anchor == other.anchor && this.head == other.head
+  eq(other: SelectionRange, includeAssoc = false): boolean {
+    return this.anchor == other.anchor && this.head == other.head &&
+      (!includeAssoc || !this.empty || this.assoc == other.assoc)
   }
 
   /// Return a JSON-serializable object representing the range.
@@ -124,12 +125,15 @@ export class EditorSelection {
     return EditorSelection.create(this.ranges.map(r => r.map(change, assoc)), this.mainIndex)
   }
 
-  /// Compare this selection to another selection.
-  eq(other: EditorSelection): boolean {
+  /// Compare this selection to another selection. By default, ranges
+  /// are compared only by position. When `includeAssoc` is true,
+  /// cursor ranges must also have the same
+  /// [`assoc`](#state.SelectionRange.assoc) value.
+  eq(other: EditorSelection, includeAssoc = false): boolean {
     if (this.ranges.length != other.ranges.length ||
         this.mainIndex != other.mainIndex) return false
     for (let i = 0; i < this.ranges.length; i++)
-      if (!this.ranges[i].eq(other.ranges[i])) return false
+      if (!this.ranges[i].eq(other.ranges[i], includeAssoc)) return false
     return true
   }
 
