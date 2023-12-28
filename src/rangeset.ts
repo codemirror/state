@@ -408,6 +408,17 @@ export class RangeSet<T extends RangeValue> {
     return build.finish()
   }
 
+  /// Join an array of range sets into a single set.
+  static join<T extends RangeValue>(sets: readonly RangeSet<T>[]): RangeSet<T> {
+    if (!sets.length) return RangeSet.empty
+    let result = sets[sets.length - 1]
+    for (let i = sets.length - 2; i >= 0; i--) {
+      for (let layer = sets[i]; layer != RangeSet.empty; layer = layer.nextLayer)
+        result = new RangeSet(layer.chunkPos, layer.chunk, result, Math.max(layer.maxPoint, result.maxPoint))
+    }
+    return result
+  }
+
   /// The empty set of ranges.
   static empty = new RangeSet<any>([], [], null as any, -1)
 }
