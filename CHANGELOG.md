@@ -1,3 +1,15 @@
+## 6.4.0 (2023-12-28)
+
+### Bug fixes
+
+When multiple ranges in a single range set overlap, put the smaller ones inside the bigger ones, so that overlapping decorations don't break up each other's elements when coming from the same source.
+
+### New features
+
+Selection and selection range `eq` methods now support an optional argument that makes them also compare by cursor associativity.
+
+The `RangeSet.join` function can be used to join multiple range sets together.
+
 ## 6.3.3 (2023-12-06)
 
 ### Bug fixes
