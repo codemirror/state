@@ -124,7 +124,7 @@ export interface TransactionSpec {
   /// When set, this transaction explicitly updates the selection.
   /// Offsets in this selection should refer to the document as it is
   /// _after_ the transaction.
-  selection?: EditorSelection | {anchor: number, head?: number},
+  selection?: EditorSelection | {anchor: number, head?: number} | undefined,
   /// Attach [state effects](#state.StateEffect) to this transaction.
   /// Again, when they contain positions and this same spec makes
   /// changes, those positions should refer to positions in the
