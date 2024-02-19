@@ -1,3 +1,9 @@
+## 6.4.1 (2024-02-19)
+
+### Bug fixes
+
+Fix an issue that caused widgets at the end of a mark decoration to be rendered in their own separate mark DOM element.
+
 ## 6.4.0 (2023-12-28)
 
 ### Bug fixes
