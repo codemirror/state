@@ -383,7 +383,9 @@ export class RangeSet<T extends RangeValue> {
       let curTo = Math.min(cursor.to, to)
       if (cursor.point) {
         let active = cursor.activeForPoint(cursor.to)
-        let openCount = cursor.pointFrom < from ? active.length + 1 : Math.min(active.length, openRanges)
+        let openCount = cursor.pointFrom < from ? active.length + 1
+          : cursor.point.startSide < 0 ? active.length
+          : Math.min(active.length, openRanges)
         iterator.point(pos, curTo, cursor.point, active, openCount, cursor.pointRank)
         openRanges = Math.min(cursor.openEnd(curTo), active.length)
       } else if (curTo > pos) {
