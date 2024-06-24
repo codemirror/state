@@ -385,7 +385,7 @@ function addSection(sections: number[], len: number, ins: number, forceJoin = fa
   if (len == 0 && ins <= 0) return
   let last = sections.length - 2
   if (last >= 0 && ins <= 0 && ins == sections[last + 1]) sections[last] += len
-  else if (len == 0 && sections[last] == 0) sections[last + 1] += ins
+  else if (last >= 0 && len == 0 && sections[last] == 0) sections[last + 1] += ins
   else if (forceJoin) { sections[last] += len; sections[last + 1] += ins }
   else sections.push(len, ins)
 }
