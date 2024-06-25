@@ -435,7 +435,9 @@ function mapSet(setA: ChangeDesc, setB: ChangeDesc, before: boolean, mkSet = fal
   // content has been inserted already, and refers to the section
   // index.
   for (let inserted = -1;;) {
-    if (a.ins == -1 && b.ins == -1) {
+    if (a.done && b.len || b.done && a.len) {
+      throw new Error("Mismatched change set lengths")
+    } else if (a.ins == -1 && b.ins == -1) {
       // Move across ranges skipped by both sets.
       let len = Math.min(a.len, b.len)
       addSection(sections, len, -1)
