@@ -99,7 +99,7 @@ export class ChangeDesc {
   /// Map this description, which should start with the same document
   /// as `other`, over another set of changes, so that it can be
   /// applied after it. When `before` is true, map as if the changes
-  /// in `other` happened before the ones in `this`.
+  /// in `this` happened before the ones in `other`.
   mapDesc(other: ChangeDesc, before = false): ChangeDesc { return other.empty ? this : mapSet(this, other, before) }
 
   /// Map a given position through these changes, to produce a
