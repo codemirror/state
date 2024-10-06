@@ -25,6 +25,9 @@
   "module": "dist/index.js",
   "sideEffects": false,
   "license": "MIT",
+  "dependencies": {
+    "@marijn/find-cluster-break": "^1.0.0"
+  },
   "devDependencies": {
     "@codemirror/buildhelper": "^1.0.0"
   },
