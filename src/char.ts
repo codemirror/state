@@ -1,6 +1,6 @@
 // Compressed representation of the Grapheme_Cluster_Break=Extend
 // information from
-// http://www.unicode.org/Public/13.0.0/ucd/auxiliary/GraphemeBreakProperty.txt.
+// http://www.unicode.org/Public/16.0.0/ucd/auxiliary/GraphemeBreakProperty.txt.
 // Each pair of elements represents a range, as an offet from the
 // previous range and a length. Numbers are in base-36, with the empty
 // string being a shorthand for 1.
