@@ -1,7 +1,7 @@
 import {ChangeDesc} from "./change"
 
 // A range's flags field is used like this:
-// - 2 bits for bidi level (3 means unset) (only meaningful for
+// - 3 bits for bidi level (7 means unset) (only meaningful for
 //   cursors)
 // - 2 bits to indicate the side the cursor is associated with (only
 //   for cursors)
