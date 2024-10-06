@@ -85,5 +85,5 @@ export function fromCodePoint(code: number) {
   return String.fromCharCode((code >> 10) + 0xd800, (code & 1023) + 0xdc00)
 }
 
-/// The amount of positions a character takes up a JavaScript string.
+/// The amount of positions a character takes up in a JavaScript string.
 export function codePointSize(code: number): 1 | 2 { return code < 0x10000 ? 1 : 2 }
