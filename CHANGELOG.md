@@ -1,3 +1,9 @@
+## 6.5.0 (2024-12-09)
+
+### New features
+
+`RangeSet.compare` now supports a `boundChange` callback that is called when there's a change in the way ranges are split.
+
 ## 6.4.1 (2024-02-19)
 
 ### Bug fixes
