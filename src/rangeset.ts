@@ -63,6 +63,11 @@ export interface RangeComparator<T extends RangeValue> {
   compareRange(from: number, to: number, activeA: T[], activeB: T[]): void
   /// Notification for a changed (or inserted, or deleted) point range.
   comparePoint(from: number, to: number, pointA: T | null, pointB: T | null): void
+  /// Notification for a changed boundary between ranges. For example,
+  /// if the same span is covered by two partial ranges before and one
+  /// bigger range after, this is called at the point where the ranges
+  /// used to be split.
+  boundChange?(pos: number): void
 }
 
 /// Methods used when iterating over the spans created by a set of
@@ -827,7 +832,7 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
   let endB = startB + length
   let pos = startB, dPos = startB - startA
   for (;;) {
-    let diff = (a.to + dPos) - b.to || a.endSide - b.endSide
+    let dEnd = (a.to + dPos) - b.to, diff = dEnd || a.endSide - b.endSide
     let end = diff < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB)
     if (a.point || b.point) {
       if (!(a.point && b.point && (a.point == b.point || a.point.eq(b.point)) &&
@@ -835,6 +840,7 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
         comparator.comparePoint(pos, clipEnd, a.point, b.point)
     } else {
       if (clipEnd > pos && !sameValues(a.active, b.active)) comparator.compareRange(pos, clipEnd, a.active, b.active)
+      else if (end < endB && (dEnd || a.openEnd != b.openEnd) && comparator.boundChange) comparator.boundChange(clipEnd)
     }
     if (end > endB) break
     pos = end

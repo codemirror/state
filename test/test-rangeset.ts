@@ -123,7 +123,8 @@ describe("RangeSet", () => {
   })
 
   describe("map", () => {
-    function test(positions: Range<Value>[], changes: [number, number, number][], newPositions: (number | [number, number])[]) {
+    function test(positions: Range<Value>[], changes: [number, number, number][],
+                  newPositions: (number | [number, number])[]) {
       let set = mkSet(positions)
       let mapped = set.map(changeSet(changes))
       let out: string[] = []
