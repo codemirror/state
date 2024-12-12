@@ -840,9 +840,9 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
         comparator.comparePoint(pos, clipEnd, a.point, b.point)
     } else {
       if (clipEnd > pos && !sameValues(a.active, b.active)) comparator.compareRange(pos, clipEnd, a.active, b.active)
-      else if (end < endB && (dEnd || a.openEnd != b.openEnd) && comparator.boundChange) comparator.boundChange(clipEnd)
     }
     if (end > endB) break
+    if ((dEnd || a.openEnd != b.openEnd) && comparator.boundChange) comparator.boundChange(end)
     pos = end
     if (diff <= 0) a.next()
     if (diff >= 0) b.next()
