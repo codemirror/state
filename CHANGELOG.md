@@ -1,3 +1,9 @@
+## 6.5.1 (2025-01-10)
+
+### Bug fixes
+
+`countColumn` no longer loops infinitely when given a `to` that's higher than the input string's length.
+
 ## 6.5.0 (2024-12-09)
 
 ### New features
