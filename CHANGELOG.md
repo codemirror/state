@@ -1,3 +1,9 @@
+## 6.5.2 (2025-02-03)
+
+### Bug fixes
+
+Fix a bug where reconfiguring a field with a new `init` value didn't update the value of the field.
+
 ## 6.5.1 (2025-01-10)
 
 ### Bug fixes
