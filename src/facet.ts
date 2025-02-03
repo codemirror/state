@@ -334,6 +334,11 @@ export class StateField<Value> {
         return SlotStatus.Changed
       },
       reconfigure: (state, oldState) => {
+        let init = state.facet(initField), oldInit = oldState.facet(initField), reInit
+        if ((reInit = init.find(i => i.field == this)) && reInit != oldInit.find(i => i.field == this)) {
+          state.values[idx] = reInit.create(state)
+          return SlotStatus.Changed
+        }
         if (oldState.config.address[this.id] != null) {
           state.values[idx] = oldState.field(this)
           return 0
