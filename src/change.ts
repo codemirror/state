@@ -529,9 +529,9 @@ function composeSets(setA: ChangeDesc, setB: ChangeDesc, mkSet = false): ChangeD
 
 class SectionIter {
   i = 0
-  len!: number
-  off!: number
-  ins!: number
+  declare len: number
+  declare off: number
+  declare ins: number
 
   constructor(readonly set: ChangeDesc) {
     this.next()
