@@ -106,12 +106,12 @@ export class ChangeDesc {
   /// position pointing into the new document.
   ///
   /// `assoc` indicates which side the position should be associated
-  /// with. When it is negative or zero, the mapping will try to keep
-  /// the position close to the character before it (if any), and will
+  /// with. When it is negative, the mapping will try to keep the
+  /// position close to the character before it (if any), and will
   /// move it before insertions at that point or replacements across
-  /// that point. When it is positive, the position is associated with
-  /// the character after it, and will be moved forward for insertions
-  /// at or replacements across the position. Defaults to -1.
+  /// that point. When it is zero or positive, the position is associated
+  /// with the character after it, and will be moved forward for
+  // insertions at or replacements across the position. Defaults to -1.
   ///
   /// `mode` determines whether deletions should be
   /// [reported](#state.MapMode). It defaults to
