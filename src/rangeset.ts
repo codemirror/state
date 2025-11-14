@@ -630,7 +630,7 @@ class HeapCursor<T extends RangeValue> {
   declare to: number
   declare value: T | null
   declare rank: number
-  
+
   constructor(readonly heap: LayerCursor<T>[]) {}
 
   static from<T extends RangeValue>(
@@ -661,7 +661,7 @@ class HeapCursor<T extends RangeValue> {
     for (let cur of this.heap) cur.forward(pos, side)
     for (let i = this.heap.length >> 1; i >= 0; i--) heapBubble(this.heap, i)
     if ((this.to - pos || this.value!.endSide - side) < 0) this.next()
-  }    
+  }
 
   next() {
     if (this.heap.length == 0) {

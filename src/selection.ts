@@ -17,7 +17,7 @@ const enum RangeFlag {
   GoalColumnOffset = 6,
   NoGoalColumn = 0xffffff
 }
-  
+
 /// A single selection range. When
 /// [`allowMultipleSelections`](#state.EditorState^allowMultipleSelections)
 /// is enabled, a [selection](#state.EditorSelection) may hold
