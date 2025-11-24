@@ -831,18 +831,22 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
   b.goto(startB)
   let endB = startB + length
   let pos = startB, dPos = startB - startA
-  for (;;) {
+  let bounds = !!comparator.boundChange
+  for (let boundChange = false;;) {
     let dEnd = (a.to + dPos) - b.to, diff = dEnd || a.endSide - b.endSide
     let end = diff < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB)
-    if (a.point || b.point) {
+    let point = a.point || b.point
+    if (point) {
       if (!(a.point && b.point && (a.point == b.point || a.point.eq(b.point)) &&
             sameValues(a.activeForPoint(a.to), b.activeForPoint(b.to))))
         comparator.comparePoint(pos, clipEnd, a.point, b.point)
+      boundChange = false
     } else {
+      if (boundChange) comparator.boundChange!(pos)
       if (clipEnd > pos && !sameValues(a.active, b.active)) comparator.compareRange(pos, clipEnd, a.active, b.active)
+      if (bounds && clipEnd < endB && (dEnd || a.openEnd(end) != b.openEnd(end))) boundChange = true
     }
     if (end > endB) break
-    if ((dEnd || a.openEnd != b.openEnd) && comparator.boundChange) comparator.boundChange(end)
     pos = end
     if (diff <= 0) a.next()
     if (diff >= 0) b.next()
