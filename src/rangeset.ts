@@ -35,6 +35,10 @@ RangeValue.prototype.startSide = RangeValue.prototype.endSide = 0
 RangeValue.prototype.point = false
 RangeValue.prototype.mapMode = MapMode.TrackDel
 
+function cmpVal(a: RangeValue, b: RangeValue) {
+  return a == b || a.constructor == b.constructor && a.eq(b)
+}
+
 /// A range associates a value with a range of positions.
 export class Range<T extends RangeValue> {
   private constructor(
@@ -363,7 +367,7 @@ export class RangeSet<T extends RangeValue> {
     for (;;) {
       if (sideA.to != sideB.to ||
           !sameValues(sideA.active, sideB.active) ||
-          sideA.point && (!sideB.point || !sideA.point.eq(sideB.point)))
+          sideA.point && (!sideB.point || !cmpVal(sideA.point, sideB.point)))
         return false
       if (sideA.to > to) return true
       sideA.next(); sideB.next()
@@ -837,7 +841,7 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
     let end = diff < 0 ? a.to + dPos : b.to, clipEnd = Math.min(end, endB)
     let point = a.point || b.point
     if (point) {
-      if (!(a.point && b.point && (a.point == b.point || a.point.eq(b.point)) &&
+      if (!(a.point && b.point && cmpVal(a.point, b.point) &&
             sameValues(a.activeForPoint(a.to), b.activeForPoint(b.to))))
         comparator.comparePoint(pos, clipEnd, a.point, b.point)
       boundChange = false
@@ -855,7 +859,7 @@ function compare<T extends RangeValue>(a: SpanCursor<T>, startA: number,
 
 function sameValues<T extends RangeValue>(a: T[], b: T[]) {
   if (a.length != b.length) return false
-  for (let i = 0; i < a.length; i++) if (a[i] != b[i] && !a[i].eq(b[i])) return false
+  for (let i = 0; i < a.length; i++) if (a[i] != b[i] && !cmpVal(a[i], b[i])) return false
   return true
 }
 
