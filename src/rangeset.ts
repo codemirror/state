@@ -164,7 +164,9 @@ class Chunk<T extends RangeValue> {
 /// only after reading the first range (if any).
 export interface RangeCursor<T> {
   /// Move the iterator forward.
-  next: () => void
+  next(): void
+  /// Jump the cursor to the given position.
+  goto(pos: number): void
   /// The next range's value. Holds `null` when the cursor has reached
   /// its end.
   value: T | null
@@ -172,6 +174,9 @@ export interface RangeCursor<T> {
   from: number
   /// The next end position.
   to: number
+  /// The position of the set that this range comes from in the array
+  /// of sets being iterated over.
+  rank: number
 }
 
 type RangeSetUpdate<T extends RangeValue> = {
