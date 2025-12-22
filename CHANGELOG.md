@@ -1,3 +1,11 @@
+## 6.5.3 (2025-12-22)
+
+### Bug fixes
+
+Fix an issue where `RangeValue.eq` could get called with a value of a different class.
+
+`EditorState.charCategorizer` now only uses the highest-precedence set of word characters from the language data, to allow overriding these.
+
 ## 6.5.2 (2025-02-03)
 
 ### Bug fixes
