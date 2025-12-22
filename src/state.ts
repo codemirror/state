@@ -371,7 +371,8 @@ export class EditorState {
   ///  - Space (contains only whitespace)
   ///  - Other (anything else)
   charCategorizer(at: number): (char: string) => CharCategory {
-    return makeCategorizer(this.languageDataAt<string>("wordChars", at).join(""))
+    let chars = this.languageDataAt<string>("wordChars", at)
+    return makeCategorizer(chars.length ? chars[0] : "")
   }
 
   /// Find the word at the given position, meaning the range
