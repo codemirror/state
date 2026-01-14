@@ -1,3 +1,9 @@
+## 6.5.4 (2026-01-14)
+
+### Bug fixes
+
+Make `SelectionRange.eq` return false when the ranges have different goal columns.
+
 ## 6.5.3 (2025-12-22)
 
 ### Bug fixes
