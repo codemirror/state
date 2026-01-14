@@ -86,7 +86,7 @@ export class SelectionRange {
 
   /// Compare this range to another range.
   eq(other: SelectionRange, includeAssoc = false): boolean {
-    return this.anchor == other.anchor && this.head == other.head &&
+    return this.anchor == other.anchor && this.head == other.head && this.goalColumn == other.goalColumn &&
       (!includeAssoc || !this.empty || this.assoc == other.assoc)
   }
 
