@@ -403,5 +403,5 @@ function extendTransaction(tr: Transaction) {
 const none: readonly any[] = []
 
 export function asArray<T>(value: undefined | T | readonly T[]): readonly T[] {
-  return value == null ? none : Array.isArray(value) ? value : [value]
+  return value == null ? none : Array.isArray(value) ? value as readonly T[] : [value as T]
 }
