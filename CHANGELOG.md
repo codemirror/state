@@ -1,3 +1,11 @@
+## 6.6.0 (2026-03-12)
+
+### New features
+
+`EditorSelection.range` now takes an optional `assoc` argument.
+
+`SelectionRange.extend` can now be given a third argument to specify associativity.
+
 ## 6.5.4 (2026-01-14)
 
 ### Bug fixes
