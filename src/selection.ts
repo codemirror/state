@@ -78,10 +78,10 @@ export class SelectionRange {
   }
 
   /// Extend this range to cover at least `from` to `to`.
-  extend(from: number, to: number = from) {
-    if (from <= this.anchor && to >= this.anchor) return EditorSelection.range(from, to)
+  extend(from: number, to: number = from, assoc = 0) {
+    if (from <= this.anchor && to >= this.anchor) return EditorSelection.range(from, to, undefined, undefined, assoc)
     let head = Math.abs(from - this.anchor) > Math.abs(to - this.anchor) ? from : to
-    return EditorSelection.range(this.anchor, head)
+    return EditorSelection.range(this.anchor, head, undefined, undefined, assoc)
   }
 
   /// Compare this range to another range.
@@ -201,11 +201,12 @@ export class EditorSelection {
   }
 
   /// Create a selection range.
-  static range(anchor: number, head: number, goalColumn?: number, bidiLevel?: number) {
+  static range(anchor: number, head: number, goalColumn?: number, bidiLevel?: number, assoc?: number) {
     let flags = ((goalColumn ?? RangeFlag.NoGoalColumn) << RangeFlag.GoalColumnOffset) |
       (bidiLevel == null ? 7 : Math.min(6, bidiLevel))
+    if (!assoc && anchor != head) assoc = head < anchor ? 1 : -1
     return head < anchor ? SelectionRange.create(head, anchor, RangeFlag.Inverted | RangeFlag.AssocAfter | flags)
-      : SelectionRange.create(anchor, head, (head > anchor ? RangeFlag.AssocBefore : 0) | flags)
+      : SelectionRange.create(anchor, head, (!assoc ? 0 : assoc < 0 ? RangeFlag.AssocBefore : RangeFlag.AssocAfter) | flags)
   }
 
   /// @internal
