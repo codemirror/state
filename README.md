@@ -1,3 +1,5 @@
+**This repository has moved to https://code.haverbeke.berlin/codemirror/state**
+
 # @codemirror/state [![NPM version](https://img.shields.io/npm/v/@codemirror/state.svg)](https://www.npmjs.org/package/@codemirror/state)
 
 [ [**WEBSITE**](https://codemirror.net/) | [**DOCS**](https://codemirror.net/docs/ref/#state) | [**ISSUES**](https://code.haverbeke.berlin/codemirror/dev/issues) | [**FORUM**](https://discuss.codemirror.net/) | [**CHANGELOG**](https://code.haverbeke.berlin/codemirror/state/src/branch/main/CHANGELOG.md) ]
